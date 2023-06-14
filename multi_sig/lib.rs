@@ -14,6 +14,16 @@ mod multi_sig {
     // TODO_ Define the events emitted by the contract
 
     // TODO_ Define the errors that can be returned
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub enum Error {
+        /// The owners list cannot be empty
+        OwnersCantBeEmpty,
+        /// The threshold cannot be greater than the number of owners
+        ThresholdGreaterThanOwners,
+        /// The threshold cannot be zero
+        ThresholdCantBeZero,
+    }
 
     // Structure that represents a transaction to be performed when the threshold is reached
     #[derive(scale::Decode, scale::Encode)]
@@ -49,8 +59,31 @@ mod multi_sig {
 
     impl MultiSig {
         #[ink(constructor)]
-        pub fn new() -> Self {
-            todo!("Implement the constructor with owners and threshold")
+        pub fn new(threshold: u8, mut owners_list: Vec<AccountId>) -> Result<Self, Error> {
+            // Remove duplicated owners
+            owners_list.sort_unstable();
+            owners_list.dedup();
+
+            // Check that the threshold and owners are valid
+            ensure_creation_params(threshold, &owners_list)?;
+
+            let mut owners = Mapping::new();
+
+            for owner in &owners_list {
+                owners.insert(owner, &());
+            }
+
+            Ok(Self {
+                owners_list,
+                owners,
+                threshold,
+                next_tx_id: 0,
+                transactions_id_list: Vec::new(),
+                transactions: Mapping::new(),
+                approvals: Mapping::new(),
+                approvals_count: Mapping::new(),
+                rejections_count: Mapping::new(),
+            })
         }
 
         #[ink(constructor)]
@@ -78,6 +111,27 @@ mod multi_sig {
         // TODO: Create messages to add and remove owners and change the threshold
 
         // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
+    }
+
+    // Ensure the params of the constructor are valid
+    // according to the rules of the contract
+    fn ensure_creation_params(threshold: u8, owners_list: &Vec<AccountId>) -> Result<(), Error> {
+        // Check that threshold is not greater than owners
+        if threshold > owners_list.len() as u8 {
+            return Err(Error::ThresholdGreaterThanOwners);
+        }
+
+        // Check that threshold is not zero
+        if threshold == 0 {
+            return Err(Error::ThresholdCantBeZero);
+        }
+
+        // Check that owners are not empty
+        if owners_list.is_empty() {
+            return Err(Error::OwnersCantBeEmpty);
+        }
+
+        Ok(())
     }
 
     #[cfg(test)]
