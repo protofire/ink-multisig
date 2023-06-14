@@ -86,11 +86,27 @@ mod multi_sig {
             })
         }
 
+        // Default constructor will create a contract wallet
+        // Just a single owner (the caller) and a threshold of 1
         #[ink(constructor)]
-        pub fn default() -> Self {
-            todo!(
-                "Implement the default constructor caller as owner and default threshold set to 1"
-            )
+        pub fn default() -> Result<Self, Error> {
+            let mut owners = Mapping::new();
+            let mut owners_list = Vec::new();
+            owners.insert(Self::env().caller(), &());
+            owners_list.push(Self::env().caller());
+
+            // sets the threshold to 1
+            Ok(Self {
+                owners_list,
+                owners,
+                threshold: 1,
+                next_tx_id: 0,
+                transactions_id_list: Vec::new(),
+                transactions: Mapping::new(),
+                approvals: Mapping::new(),
+                approvals_count: Mapping::new(),
+                rejections_count: Mapping::new(),
+            })
         }
 
         #[ink(message)]
