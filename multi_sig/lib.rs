@@ -53,7 +53,11 @@ mod multi_sig {
 
     // Structure that represents the multisig contract
     // It contains the list of owners, the threshold, the list of transactions and the list of approvals
-    // TODO_ Explain the redundant data structures
+    // The presence of redundant information between owners_list and owners, and transactions_id_list and transactions
+    // is intentional to make it easier the elements access.
+    // Although they represent the same TxId, this redundancy is maintained in order to support efficient iteration over
+    // 'transactions_id_list' while fetching a transaction. By duplicating the tx IDs, we achieve a constant time complexity of
+    // O(1) when accessing tx information directly from 'transacctions'.
     #[ink(storage)]
     #[derive(Default)]
     pub struct MultiSig {
