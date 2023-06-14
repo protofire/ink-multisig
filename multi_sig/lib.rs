@@ -11,6 +11,9 @@ mod multi_sig {
     type Approvals = u8;
     type Rejections = u8;
 
+    // Define the constants used in the contract
+    const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
+
     // TODO_ Define the events emitted by the contract
 
     // TODO_ Define the errors that can be returned
@@ -23,6 +26,14 @@ mod multi_sig {
         ThresholdGreaterThanOwners,
         /// The threshold cannot be zero
         ThresholdCantBeZero,
+        /// The transaction can only be executed by the multisig contract itself
+        Unauthorized,
+        /// No more owners can be added
+        MaxOwnersReached,
+        /// The owner already exists
+        OwnerAlreadyExists,
+        /// The caller is not an owner
+        NotOwner,
     }
 
     // Structure that represents a transaction to be performed when the threshold is reached
@@ -124,7 +135,93 @@ mod multi_sig {
             todo!("Implement the approve_transaction message")
         }
 
-        // TODO: Create messages to add and remove owners and change the threshold
+        // Owner management
+        #[ink(message)]
+        pub fn add_owner(&mut self, owner: AccountId) -> Result<(), Error> {
+            // Check that caller is multisig
+            self.ensure_self_call()?;
+
+            // Check that owners are not greater than MAX_OWNERS
+            if self.owners_list.len() as u8 == MAX_OWNERS {
+                return Err(Error::MaxOwnersReached);
+            }
+
+            // Check that owner is not already an owner
+            if self.owners.contains(owner) {
+                return Err(Error::OwnerAlreadyExists);
+            }
+
+            // Add the owner
+            self.owners.insert(owner, &());
+            self.owners_list.push(owner);
+
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn remove_owner(&mut self, owner: AccountId) -> Result<(), Error> {
+            // Check that caller is multisig
+            self.ensure_self_call()?;
+
+            // Check that owner is actually an owner
+            self.ensure_is_owner(owner)?;
+
+            let owners_count = self.owners_list.len();
+
+            // Check that owners are not empty after removing
+            if owners_count == 1 {
+                return Err(Error::OwnersCantBeEmpty);
+            }
+
+            // Check that threshold is not greater than owners after removing
+            if self.threshold > (owners_count - 1) as u8 {
+                return Err(Error::ThresholdGreaterThanOwners);
+            }
+
+            // Remove the owner
+            self.owners.remove(owner);
+            self.owners_list.retain(|&x| x != owner);
+
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn change_threshold(&mut self, threshold: u8) -> Result<(), Error> {
+            // Check that caller is multisig
+            self.ensure_self_call()?;
+
+            // Check that threshold is not greater than owners
+            if threshold > self.owners_list.len() as u8 {
+                return Err(Error::ThresholdGreaterThanOwners);
+            }
+
+            // Check that threshold is not zero
+            if threshold == 0 {
+                return Err(Error::ThresholdCantBeZero);
+            }
+
+            // Change the threshold
+            self.threshold = threshold;
+
+            Ok(())
+        }
+
+        //-------------------------------------------------------
+        // Internal functions
+
+        fn ensure_self_call(&self) -> Result<(), Error> {
+            if self.env().caller() != self.env().account_id() {
+                return Err(Error::Unauthorized);
+            }
+            Ok(())
+        }
+
+        fn ensure_is_owner(&self, owner: AccountId) -> Result<(), Error> {
+            self.owners
+                .contains(owner)
+                .then_some(())
+                .ok_or(Error::NotOwner)
+        }
 
         // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
     }
