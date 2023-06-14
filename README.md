@@ -1,1 +1,1 @@
-# multi_signature_ink_smart_contract
+# Multi signature ink!  smart contract
