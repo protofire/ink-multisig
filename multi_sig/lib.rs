@@ -38,7 +38,7 @@ mod multi_sig {
         #[ink(topic)]
         tx_id: TxId,
         #[ink(topic)]
-        address: AccountId,
+        contractAddress: AccountId,
         selector: [u8; 4],
         input: Vec<u8>,
         transferred_value: Balance,
