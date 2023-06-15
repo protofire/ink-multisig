@@ -3,8 +3,18 @@
 #[ink::contract]
 mod multi_sig {
 
+    use ink::LangError;
     // Import the necessary dependencies
-    use ink::{prelude::vec::Vec, storage::Mapping};
+    use ink::{
+        env::{
+            call::{build_call, ExecutionInput},
+            CallFlags,
+        },
+        prelude::vec::Vec,
+        storage::Mapping,
+    };
+    use openbrush::traits::Flush;
+    use scale::Output;
 
     // Defined the types used in the contract
     type TxId = u128;
@@ -14,6 +24,15 @@ mod multi_sig {
     // Define the constants used in the contract
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
     const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
+
+    // Struct to SCALE encode the input of the call
+    struct InputArgs<'a>(&'a [u8]);
+
+    impl<'a> scale::Encode for InputArgs<'a> {
+        fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
+            dest.write(self.0);
+        }
+    }
 
     #[ink(event)]
     pub struct ThresholdChanged {
@@ -38,7 +57,7 @@ mod multi_sig {
         #[ink(topic)]
         tx_id: TxId,
         #[ink(topic)]
-        contractAddress: AccountId,
+        contract_address: AccountId,
         selector: [u8; 4],
         input: Vec<u8>,
         transferred_value: Balance,
@@ -46,10 +65,34 @@ mod multi_sig {
         allow_reentry: bool,
     }
 
+    #[ink(event)]
+    pub struct TransactionExecuted {
+        #[ink(topic)]
+        tx_id: TxId,
+        result: TxResult,
+    }
+
+    #[ink(event)]
+    pub struct TransactionRemoved {
+        #[ink(topic)]
+        tx_id: TxId,
+    }
+
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub enum TxResult {
+        Success(Vec<u8>),
+        Failed(Error),
+    }
+
     // TODO_ Define the errors that can be returned
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
+        /// Env error encountered when executing the transaction
+        EnvExecutionFailed,
+        /// Transaction executed but Lang error encountered
+        LangExecutionFailed(LangError),
         /// The owners list cannot be empty
         OwnersCantBeEmpty,
         /// The threshold cannot be greater than the number of owners
@@ -184,7 +227,7 @@ mod multi_sig {
 
             self.env().emit_event(TransactionProposed {
                 tx_id: current_tx_id,
-                contractAddress: transaction.address,
+                contract_address: transaction.address,
                 selector: transaction.selector,
                 input: transaction.input,
                 transferred_value: transaction.transferred_value,
@@ -192,7 +235,8 @@ mod multi_sig {
                 allow_reentry: transaction.allow_reentry,
             });
 
-            // TODO: Add transaction execution here.
+            // If threshold is reached when proposed (threshold == 1), execute the transaction
+            self.try_execute_tx(current_tx_id);
 
             Ok(())
         }
@@ -304,7 +348,79 @@ mod multi_sig {
                 .ok_or(Error::NotOwner)
         }
 
+        fn try_execute_tx(&mut self, tx_id: TxId) {
+            // check threshold met
+            if self.check_threshold_met(tx_id) {
+                // execute transaction
+                self.execute_transaction(tx_id);
+            }
+        }
+
+        fn check_threshold_met(&self, tx_id: TxId) -> bool {
+            // Fetch the approvals for the transaction
+            let approvals = self.approvals_count.get(tx_id).expect("This should never fail. We are fetching the approvals count for a transaction that we know exists");
+            approvals >= self.threshold
+        }
+
+        fn execute_transaction(&mut self, tx_id: TxId) {
+            // Fetch the transaction
+            let tx = self.get_transaction(tx_id).expect("This should never fail because we are checking the tx_id before calling this function");
+
+            let tx_result = build_call::<<Self as ::ink::env::ContractEnv>::Env>()
+                .call(tx.address)
+                .gas_limit(tx.gas_limit)
+                .transferred_value(tx.transferred_value) //TODO: check if we can use the contract balance instead of the transferred value
+                .call_flags(CallFlags::default().set_allow_reentry(tx.allow_reentry))
+                .exec_input(ExecutionInput::new(tx.selector.into()).push_arg(InputArgs(&tx.input)))
+                .returns::<Vec<u8>>()
+                .try_invoke();
+
+            // Instead of just returning a custom Error we could return the error from the call
+            let result = match tx_result {
+                Ok(Ok(bytes)) => TxResult::Success(bytes),
+                Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
+                Err(_e) => TxResult::Failed(Error::EnvExecutionFailed), //TODO handle error with custom wrapper
+            };
+
+            // We need to load the storage again because the call might have changed it.
+            // In order to use this we imported the Flush trait from openbrush.
+            // Importing openbrush 3.1.0 forced us to downgrade ink to 4.1.0
+            // check if it is reentrant for the same contract to perform the loading again
+            if tx.allow_reentry && tx.address == self.env().account_id() {
+                self.load(); //TODO check if we create some vulnerabilities with this
+            }
+
+            // Delete the transaction from the storage
+            self.remove_transaction(tx_id);
+
+            // Emit event
+            self.env().emit_event(TransactionExecuted { tx_id, result });
+        }
+
+        fn remove_transaction(&mut self, tx_id: TxId) {
+            // Remove the transaction from the index list
+            self.transactions_id_list.retain(|&x| x != tx_id);
+
+            // Remove the transaction from the mappping
+            self.transactions.remove(tx_id);
+
+            // Remove the transaction from the approvals count
+            self.approvals_count.remove(tx_id);
+
+            // Remove the approvals TODO: check if there is a more efficient way of doing it
+            for owner in self.owners_list.iter() {
+                self.approvals.remove((tx_id, *owner));
+            }
+
+            // emit event
+            self.env().emit_event(TransactionRemoved { tx_id }); //TODO: Maybe dont emit this event from here and only emit it in the parent caller
+        }
+
         // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
+        #[ink(message)]
+        pub fn get_transaction(&self, index: TxId) -> Option<Transaction> {
+            self.transactions.get(index)
+        }
     }
 
     // Ensure the params of the constructor are valid
