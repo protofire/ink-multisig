@@ -66,6 +66,22 @@ mod multi_sig {
     }
 
     #[ink(event)]
+    pub struct Approve {
+        #[ink(topic)]
+        tx_id: TxId,
+        #[ink(topic)]
+        owner: AccountId,
+    }
+
+    #[ink(event)]
+    pub struct Reject {
+        #[ink(topic)]
+        tx_id: TxId,
+        #[ink(topic)]
+        owner: AccountId,
+    }
+
+    #[ink(event)]
     pub struct TransactionExecuted {
         #[ink(topic)]
         tx_id: TxId,
@@ -111,6 +127,10 @@ mod multi_sig {
         MaxTransactionsReached,
         /// The transaction Id has overflowed
         TxIdOverflow,
+        /// The caller has already voted
+        AlreadyVoted,
+        /// The transaction Id is not valid
+        InvalidTxId,
     }
 
     // Structure that represents a transaction to be performed when the threshold is reached
@@ -242,13 +262,29 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn approve_transaction(&mut self) {
-            todo!("Implement the approve_transaction message")
+        pub fn approve_transaction(&mut self, tx_id: TxId) -> Result<(), Error> {
+            // perform checks
+            self.perform_approval_rejection_checking(tx_id)?;
+            self.approve(tx_id)?;
+            self.env().emit_event(Approve {
+                tx_id,
+                owner: self.env().caller(),
+            });
+            self.try_execute_tx(tx_id);
+            Ok(())
         }
 
         #[ink(message)]
-        pub fn reject_transaction(&mut self) {
-            todo!("Implement the approve_transaction message")
+        pub fn reject_transaction(&mut self, tx_id: TxId) -> Result<(), Error> {
+            // perform checks
+            self.perform_approval_rejection_checking(tx_id)?;
+            self.reject(tx_id)?;
+            self.env().emit_event(Reject {
+                tx_id,
+                owner: self.env().caller(),
+            });
+            self.try_remove_tx(tx_id)?;
+            Ok(())
         }
 
         // Owner management
@@ -348,6 +384,13 @@ mod multi_sig {
                 .ok_or(Error::NotOwner)
         }
 
+        fn ensure_not_already_voted(&self, tx_id: TxId) -> Result<(), Error> {
+            if self.approvals.get((tx_id, self.env().caller())).is_some() {
+                return Err(Error::AlreadyVoted);
+            }
+            Ok(())
+        }
+
         fn try_execute_tx(&mut self, tx_id: TxId) {
             // check threshold met
             if self.check_threshold_met(tx_id) {
@@ -356,10 +399,40 @@ mod multi_sig {
             }
         }
 
+        fn try_remove_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
+            // check if threshold can be met with the remaining approvals
+            if !self.check_threshold_can_be_met(tx_id) {
+                // delete transaction
+                self.remove_transaction(tx_id);
+            }
+            Ok(())
+        }
+
         fn check_threshold_met(&self, tx_id: TxId) -> bool {
             // Fetch the approvals for the transaction
             let approvals = self.approvals_count.get(tx_id).expect("This should never fail. We are fetching the approvals count for a transaction that we know exists");
             approvals >= self.threshold
+        }
+
+        fn check_threshold_can_be_met(&self, tx_id: TxId) -> bool {
+            // Fetch the rejections for the transaction
+            let rejections  = self.rejections_count.get(tx_id).expect("This should never fail. We are fetching the approvals count for a transaction that we know exists");
+
+            // if the rejections are greater than owners - threshold, then the threshold can't be met
+            rejections <= self.owners_list.len() as u8 - self.threshold
+        }
+
+        fn perform_approval_rejection_checking(&mut self, tx_id: TxId) -> Result<(), Error> {
+            // Check that the caller is an owner
+            self.ensure_is_owner(self.env().caller())?;
+
+            // Check that the transaction exists
+            self.is_transaction_valid(tx_id)?;
+
+            // Check that the caller has not voted yet
+            self.ensure_not_already_voted(tx_id)?;
+
+            Ok(())
         }
 
         fn execute_transaction(&mut self, tx_id: TxId) {
@@ -416,10 +489,38 @@ mod multi_sig {
             self.env().emit_event(TransactionRemoved { tx_id }); //TODO: Maybe dont emit this event from here and only emit it in the parent caller
         }
 
+        fn approve(&mut self, tx_id: TxId) -> Result<(), Error> {
+            let approvals = self
+                .approvals_count
+                .get(tx_id)
+                .expect("This cannot panic if checks already perfromed");
+            self.approvals_count.insert(tx_id, &(approvals + 1));
+            self.approvals.insert((tx_id, self.env().caller()), &true);
+            Ok(())
+        }
+
+        fn reject(&mut self, tx_id: TxId) -> Result<(), Error> {
+            let rejections = self
+                .rejections_count
+                .get(tx_id)
+                .expect("This cannot panic if checks already perfromed");
+            self.rejections_count.insert(tx_id, &(rejections + 1));
+            self.approvals.insert((tx_id, self.env().caller()), &false);
+            Ok(())
+        }
+
         // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
         #[ink(message)]
         pub fn get_transaction(&self, index: TxId) -> Option<Transaction> {
             self.transactions.get(index)
+        }
+
+        #[ink(message)]
+        pub fn is_transaction_valid(&self, tx_id: TxId) -> Result<(), Error> {
+            self.transactions
+                .contains(tx_id)
+                .then_some(())
+                .ok_or(Error::InvalidTxId)
         }
     }
 
