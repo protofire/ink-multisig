@@ -14,7 +14,23 @@ mod multi_sig {
     // Define the constants used in the contract
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
 
-    // TODO_ Define the events emitted by the contract
+    #[ink(event)]
+    pub struct ThresholdChanged {
+        #[ink(topic)]
+        threshold: u8,
+    }
+
+    #[ink(event)]
+    pub struct OwnerAdded {
+        #[ink(topic)]
+        owner: AccountId,
+    }
+
+    #[ink(event)]
+    pub struct OwnerRemoved {
+        #[ink(topic)]
+        owner: AccountId,
+    }
 
     // TODO_ Define the errors that can be returned
     #[derive(scale::Encode, scale::Decode)]
@@ -159,6 +175,9 @@ mod multi_sig {
             self.owners.insert(owner, &());
             self.owners_list.push(owner);
 
+            // emit event
+            self.env().emit_event(OwnerAdded { owner });
+
             Ok(())
         }
 
@@ -186,6 +205,9 @@ mod multi_sig {
             self.owners.remove(owner);
             self.owners_list.retain(|&x| x != owner);
 
+            // emit event
+            self.env().emit_event(OwnerRemoved { owner });
+
             Ok(())
         }
 
@@ -206,6 +228,9 @@ mod multi_sig {
 
             // Change the threshold
             self.threshold = threshold;
+
+            // emit event
+            self.env().emit_event(ThresholdChanged { threshold });
 
             Ok(())
         }
