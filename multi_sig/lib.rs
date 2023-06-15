@@ -184,7 +184,7 @@ mod multi_sig {
 
             self.env().emit_event(TransactionProposed {
                 tx_id: current_tx_id,
-                address: transaction.address,
+                contractAddress: transaction.address,
                 selector: transaction.selector,
                 input: transaction.input,
                 transferred_value: transaction.transferred_value,
