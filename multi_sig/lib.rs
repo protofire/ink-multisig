@@ -13,6 +13,7 @@ mod multi_sig {
 
     // Define the constants used in the contract
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
+    const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
 
     #[ink(event)]
     pub struct ThresholdChanged {
@@ -63,6 +64,10 @@ mod multi_sig {
         OwnerAlreadyExists,
         /// The caller is not an owner
         NotOwner,
+        /// The maximum number of active transactions has been reached
+        MaxTransactionsReached,
+        /// The transaction Id has overflowed
+        TxIdOverflow,
     }
 
     // Structure that represents a transaction to be performed when the threshold is reached
@@ -158,11 +163,14 @@ mod multi_sig {
             // Check that the caller is an owner
             self.ensure_is_owner(self.env().caller())?;
 
-            // TODO Create a constant to contain max transactions to avoid storage overflow
+            // Check that the maximum number of transactions has not been reached
+            if self.transactions_id_list.len() as u8 == MAX_TRANSACTIONS {
+                return Err(Error::MaxTransactionsReached);
+            }
 
             // Handle next_tx_id
-            // TODO Check if this can overflow
             let current_tx_id = self.next_tx_id;
+            self.next_tx_id = current_tx_id.checked_add(1).ok_or(Error::TxIdOverflow)?;
 
             // Store the transaction
             self.transactions_id_list.push(current_tx_id);
