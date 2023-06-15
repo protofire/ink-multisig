@@ -13,6 +13,7 @@ mod multi_sig {
 
     // Define the constants used in the contract
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
+    const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
 
     #[ink(event)]
     pub struct ThresholdChanged {
@@ -30,6 +31,19 @@ mod multi_sig {
     pub struct OwnerRemoved {
         #[ink(topic)]
         owner: AccountId,
+    }
+
+    #[ink(event)]
+    pub struct TransactionProposed {
+        #[ink(topic)]
+        tx_id: TxId,
+        #[ink(topic)]
+        contractAddress: AccountId,
+        selector: [u8; 4],
+        input: Vec<u8>,
+        transferred_value: Balance,
+        gas_limit: u64,
+        allow_reentry: bool,
     }
 
     // TODO_ Define the errors that can be returned
@@ -50,6 +64,10 @@ mod multi_sig {
         OwnerAlreadyExists,
         /// The caller is not an owner
         NotOwner,
+        /// The maximum number of active transactions has been reached
+        MaxTransactionsReached,
+        /// The transaction Id has overflowed
+        TxIdOverflow,
     }
 
     // Structure that represents a transaction to be performed when the threshold is reached
@@ -141,8 +159,42 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn propose_transaction(&mut self) {
-            todo!("Implement the propose_transaction message")
+        pub fn propose_transaction(&mut self, transaction: Transaction) -> Result<(), Error> {
+            // Check that the caller is an owner
+            self.ensure_is_owner(self.env().caller())?;
+
+            // Check that the maximum number of transactions has not been reached
+            if self.transactions_id_list.len() as u8 == MAX_TRANSACTIONS {
+                return Err(Error::MaxTransactionsReached);
+            }
+
+            // Handle next_tx_id
+            let current_tx_id = self.next_tx_id;
+            self.next_tx_id = current_tx_id.checked_add(1).ok_or(Error::TxIdOverflow)?;
+
+            // Store the transaction
+            self.transactions_id_list.push(current_tx_id);
+            // ink_storage::lazy::mapping::Mapping receives a reference, so we are passing a &transaction
+            self.transactions.insert(current_tx_id, &transaction);
+
+            // Initialize the approvals count with 1 approval and 0 rejections
+            self.approvals_count.insert(current_tx_id, &1);
+            self.approvals
+                .insert((current_tx_id, self.env().caller()), &true);
+
+            self.env().emit_event(TransactionProposed {
+                tx_id: current_tx_id,
+                address: transaction.address,
+                selector: transaction.selector,
+                input: transaction.input,
+                transferred_value: transaction.transferred_value,
+                gas_limit: transaction.gas_limit,
+                allow_reentry: transaction.allow_reentry,
+            });
+
+            // TODO: Add transaction execution here.
+
+            Ok(())
         }
 
         #[ink(message)]
