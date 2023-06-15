@@ -32,6 +32,19 @@ mod multi_sig {
         owner: AccountId,
     }
 
+    #[ink(event)]
+    pub struct TransactionProposed {
+        #[ink(topic)]
+        tx_id: TxId,
+        #[ink(topic)]
+        address: AccountId,
+        selector: [u8; 4],
+        input: Vec<u8>,
+        transferred_value: Balance,
+        gas_limit: u64,
+        allow_reentry: bool,
+    }
+
     // TODO_ Define the errors that can be returned
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
@@ -141,8 +154,39 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn propose_transaction(&mut self) {
-            todo!("Implement the propose_transaction message")
+        pub fn propose_transaction(&mut self, transaction: Transaction) -> Result<(), Error> {
+            // Check that the caller is an owner
+            self.ensure_is_owner(self.env().caller())?;
+
+            // TODO Create a constant to contain max transactions to avoid storage overflow
+
+            // Handle next_tx_id
+            // TODO Check if this can overflow
+            let current_tx_id = self.next_tx_id;
+
+            // Store the transaction
+            self.transactions_id_list.push(current_tx_id);
+            // ink_storage::lazy::mapping::Mapping receives a reference, so we are passing a &transaction
+            self.transactions.insert(current_tx_id, &transaction);
+
+            // Initialize the approvals count with 1 approval and 0 rejections
+            self.approvals_count.insert(current_tx_id, &1);
+            self.approvals
+                .insert((current_tx_id, self.env().caller()), &true);
+
+            self.env().emit_event(TransactionProposed {
+                tx_id: current_tx_id,
+                address: transaction.address,
+                selector: transaction.selector,
+                input: transaction.input,
+                transferred_value: transaction.transferred_value,
+                gas_limit: transaction.gas_limit,
+                allow_reentry: transaction.allow_reentry,
+            });
+
+            // TODO: Add transaction execution here.
+
+            Ok(())
         }
 
         #[ink(message)]
