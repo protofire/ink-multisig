@@ -509,7 +509,37 @@ mod multi_sig {
             Ok(())
         }
 
-        // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
+        //-------------------------------------------------------
+        // Read functions
+
+        // Owners
+        #[ink(message)]
+        pub fn get_owners(&self) -> Vec<AccountId> {
+            self.owners_list.clone()
+        }
+
+        #[ink(message)]
+        pub fn is_owner(&self, owner: AccountId) -> bool {
+            self.owners.contains(owner)
+        }
+
+        // Treshold
+        #[ink(message)]
+        pub fn get_threshold(&self) -> u8 {
+            self.threshold
+        }
+
+        // Transactions
+        #[ink(message)]
+        pub fn get_next_tx_id(&self) -> TxId {
+            self.next_tx_id
+        }
+
+        #[ink(message)]
+        pub fn get_active_txid_list(&self) -> Vec<TxId> {
+            self.txs_id_list.clone()
+        }
+
         #[ink(message)]
         pub fn get_tx(&self, index: TxId) -> Option<Transaction> {
             self.txs.get(index)
@@ -521,6 +551,21 @@ mod multi_sig {
                 .contains(tx_id)
                 .then_some(())
                 .ok_or(Error::InvalidTxId)
+        }
+
+        #[ink(message)]
+        pub fn get_tx_approvals(&self, tx_id: TxId) -> Option<u8> {
+            self.approvals_count.get(tx_id)
+        }
+
+        #[ink(message)]
+        pub fn get_tx_rejections(&self, tx_id: TxId) -> Option<u8> {
+            self.rejections_count.get(tx_id)
+        }
+
+        #[ink(message)]
+        pub fn get_tx_approval_for_account(&self, tx_id: TxId, owner: AccountId) -> Option<bool> {
+            self.approvals.get((tx_id, owner))
         }
     }
 
