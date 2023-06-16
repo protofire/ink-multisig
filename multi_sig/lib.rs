@@ -283,8 +283,26 @@ mod multi_sig {
                 tx_id,
                 owner: self.env().caller(),
             });
-            self.try_remove_tx(tx_id)?;
+            self.try_remove_tx(tx_id);
             Ok(())
+        }
+
+        #[ink(message)]
+        pub fn try_execute_tx(&mut self, tx_id: TxId) {
+            // check threshold met
+            if self.check_threshold_met(tx_id) {
+                // execute transaction
+                self.execute_tx(tx_id);
+            }
+        }
+
+        #[ink(message)]
+        pub fn try_remove_tx(&mut self, tx_id: TxId) {
+            // check if threshold can be met with the remaining approvals
+            if !self.check_threshold_can_be_met(tx_id) {
+                // delete transaction
+                self.remove_tx(tx_id);
+            }
         }
 
         // Owner management
@@ -387,23 +405,6 @@ mod multi_sig {
         fn ensure_not_already_voted(&self, tx_id: TxId) -> Result<(), Error> {
             if self.approvals.get((tx_id, self.env().caller())).is_some() {
                 return Err(Error::AlreadyVoted);
-            }
-            Ok(())
-        }
-
-        fn try_execute_tx(&mut self, tx_id: TxId) {
-            // check threshold met
-            if self.check_threshold_met(tx_id) {
-                // execute transaction
-                self.execute_tx(tx_id);
-            }
-        }
-
-        fn try_remove_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
-            // check if threshold can be met with the remaining approvals
-            if !self.check_threshold_can_be_met(tx_id) {
-                // delete transaction
-                self.remove_tx(tx_id);
             }
             Ok(())
         }
