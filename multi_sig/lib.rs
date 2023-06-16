@@ -162,8 +162,8 @@ mod multi_sig {
         owners: Mapping<AccountId, ()>,
         threshold: u8,
         next_tx_id: TxId,
-        transactions_id_list: Vec<TxId>,
-        transactions: Mapping<TxId, Transaction>,
+        txs_id_list: Vec<TxId>,
+        txs: Mapping<TxId, Transaction>,
         approvals: Mapping<(TxId, AccountId), bool>,
         approvals_count: Mapping<TxId, Approvals>,
         rejections_count: Mapping<TxId, Rejections>,
@@ -190,8 +190,8 @@ mod multi_sig {
                 owners,
                 threshold,
                 next_tx_id: 0,
-                transactions_id_list: Vec::new(),
-                transactions: Mapping::new(),
+                txs_id_list: Vec::new(),
+                txs: Mapping::new(),
                 approvals: Mapping::new(),
                 approvals_count: Mapping::new(),
                 rejections_count: Mapping::new(),
@@ -213,8 +213,8 @@ mod multi_sig {
                 owners,
                 threshold: 1,
                 next_tx_id: 0,
-                transactions_id_list: Vec::new(),
-                transactions: Mapping::new(),
+                txs_id_list: Vec::new(),
+                txs: Mapping::new(),
                 approvals: Mapping::new(),
                 approvals_count: Mapping::new(),
                 rejections_count: Mapping::new(),
@@ -222,12 +222,12 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn propose_transaction(&mut self, transaction: Transaction) -> Result<(), Error> {
+        pub fn propose_tx(&mut self, tx: Transaction) -> Result<(), Error> {
             // Check that the caller is an owner
             self.ensure_is_owner(self.env().caller())?;
 
             // Check that the maximum number of transactions has not been reached
-            if self.transactions_id_list.len() as u8 == MAX_TRANSACTIONS {
+            if self.txs_id_list.len() as u8 == MAX_TRANSACTIONS {
                 return Err(Error::MaxTransactionsReached);
             }
 
@@ -236,9 +236,9 @@ mod multi_sig {
             self.next_tx_id = current_tx_id.checked_add(1).ok_or(Error::TxIdOverflow)?;
 
             // Store the transaction
-            self.transactions_id_list.push(current_tx_id);
+            self.txs_id_list.push(current_tx_id);
             // ink_storage::lazy::mapping::Mapping receives a reference, so we are passing a &transaction
-            self.transactions.insert(current_tx_id, &transaction);
+            self.txs.insert(current_tx_id, &tx);
 
             // Initialize the approvals count with 1 approval and 0 rejections
             self.approvals_count.insert(current_tx_id, &1);
@@ -247,12 +247,12 @@ mod multi_sig {
 
             self.env().emit_event(TransactionProposed {
                 tx_id: current_tx_id,
-                contract_address: transaction.address,
-                selector: transaction.selector,
-                input: transaction.input,
-                transferred_value: transaction.transferred_value,
-                gas_limit: transaction.gas_limit,
-                allow_reentry: transaction.allow_reentry,
+                contract_address: tx.address,
+                selector: tx.selector,
+                input: tx.input,
+                transferred_value: tx.transferred_value,
+                gas_limit: tx.gas_limit,
+                allow_reentry: tx.allow_reentry,
             });
 
             // If threshold is reached when proposed (threshold == 1), execute the transaction
@@ -262,7 +262,7 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn approve_transaction(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn approve_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.approve(tx_id)?;
@@ -275,7 +275,7 @@ mod multi_sig {
         }
 
         #[ink(message)]
-        pub fn reject_transaction(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn reject_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.reject(tx_id)?;
@@ -395,7 +395,7 @@ mod multi_sig {
             // check threshold met
             if self.check_threshold_met(tx_id) {
                 // execute transaction
-                self.execute_transaction(tx_id);
+                self.execute_tx(tx_id);
             }
         }
 
@@ -403,7 +403,7 @@ mod multi_sig {
             // check if threshold can be met with the remaining approvals
             if !self.check_threshold_can_be_met(tx_id) {
                 // delete transaction
-                self.remove_transaction(tx_id);
+                self.remove_tx(tx_id);
             }
             Ok(())
         }
@@ -427,7 +427,7 @@ mod multi_sig {
             self.ensure_is_owner(self.env().caller())?;
 
             // Check that the transaction exists
-            self.is_transaction_valid(tx_id)?;
+            self.is_tx_valid(tx_id)?;
 
             // Check that the caller has not voted yet
             self.ensure_not_already_voted(tx_id)?;
@@ -435,9 +435,9 @@ mod multi_sig {
             Ok(())
         }
 
-        fn execute_transaction(&mut self, tx_id: TxId) {
+        fn execute_tx(&mut self, tx_id: TxId) {
             // Fetch the transaction
-            let tx = self.get_transaction(tx_id).expect("This should never fail because we are checking the tx_id before calling this function");
+            let tx = self.get_tx(tx_id).expect("This should never fail because we are checking the tx_id before calling this function");
 
             let tx_result = build_call::<<Self as ::ink::env::ContractEnv>::Env>()
                 .call(tx.address)
@@ -464,18 +464,18 @@ mod multi_sig {
             }
 
             // Delete the transaction from the storage
-            self.remove_transaction(tx_id);
+            self.remove_tx(tx_id);
 
             // Emit event
             self.env().emit_event(TransactionExecuted { tx_id, result });
         }
 
-        fn remove_transaction(&mut self, tx_id: TxId) {
+        fn remove_tx(&mut self, tx_id: TxId) {
             // Remove the transaction from the index list
-            self.transactions_id_list.retain(|&x| x != tx_id);
+            self.txs_id_list.retain(|&x| x != tx_id);
 
             // Remove the transaction from the mappping
-            self.transactions.remove(tx_id);
+            self.txs.remove(tx_id);
 
             // Remove the transaction from the approvals count
             self.approvals_count.remove(tx_id);
@@ -511,13 +511,13 @@ mod multi_sig {
 
         // TODO: Add read functions to get the list of owners, the threshold and the list of pending transactions
         #[ink(message)]
-        pub fn get_transaction(&self, index: TxId) -> Option<Transaction> {
-            self.transactions.get(index)
+        pub fn get_tx(&self, index: TxId) -> Option<Transaction> {
+            self.txs.get(index)
         }
 
         #[ink(message)]
-        pub fn is_transaction_valid(&self, tx_id: TxId) -> Result<(), Error> {
-            self.transactions
+        pub fn is_tx_valid(&self, tx_id: TxId) -> Result<(), Error> {
+            self.txs
                 .contains(tx_id)
                 .then_some(())
                 .ok_or(Error::InvalidTxId)
