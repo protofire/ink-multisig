@@ -3,8 +3,8 @@
 #[ink::contract]
 mod multi_sig {
 
-    use ink::LangError;
     // Import the necessary dependencies
+    use ink::LangError;
     use ink::{
         env::{
             call::{build_call, ExecutionInput},
@@ -94,6 +94,13 @@ mod multi_sig {
         tx_id: TxId,
     }
 
+    #[ink(event)]
+    pub struct Transfer {
+        #[ink(topic)]
+        to: AccountId,
+        value: Balance,
+    }
+
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum TxResult {
@@ -131,6 +138,8 @@ mod multi_sig {
         AlreadyVoted,
         /// The transaction Id is not valid
         InvalidTxId,
+        /// The transfer has failed
+        TransferFailed,
     }
 
     // Structure that represents a transaction to be performed when the threshold is reached
@@ -383,6 +392,23 @@ mod multi_sig {
 
             // emit event
             self.env().emit_event(ThresholdChanged { threshold });
+
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn transfer(&mut self, to: AccountId, value: Balance) -> Result<(), Error> {
+            // Check that caller is multisig
+            self.ensure_self_call()?;
+
+            // Transfer the funds
+            // Balance checks are being done inside the transfer function
+            self.env()
+                .transfer(to, value)
+                .map_err(|_| Error::TransferFailed)?;
+
+            // emit event
+            self.env().emit_event(Transfer { to, value });
 
             Ok(())
         }
