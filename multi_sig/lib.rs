@@ -242,6 +242,8 @@ mod multi_sig {
 
             // Initialize the approvals count with 1 approval and 0 rejections
             self.approvals_count.insert(current_tx_id, &1);
+            self.rejections_count.insert(current_tx_id, &0);
+
             self.approvals
                 .insert((current_tx_id, self.env().caller()), &true);
 
@@ -480,6 +482,9 @@ mod multi_sig {
 
             // Remove the transaction from the approvals count
             self.approvals_count.remove(tx_id);
+
+            // Remove the transaction from the rejections count
+            self.rejections_count.remove(tx_id);
 
             // Remove the approvals TODO: check if there is a more efficient way of doing it
             for owner in self.owners_list.iter() {
