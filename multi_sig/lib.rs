@@ -399,14 +399,16 @@ mod multi_sig {
             // Check that caller is multisig
             self.ensure_self_call()?;
 
-            // emit event
-            self.env().emit_event(Transfer { to, value });
-
             // Transfer the funds
             // Balance checks are being done inside the transfer function
             self.env()
                 .transfer(to, value)
-                .map_err(|_| Error::TransferFailed)
+                .map_err(|_| Error::TransferFailed)?;
+
+            // emit event
+            self.env().emit_event(Transfer { to, value });
+
+            Ok(())
         }
 
         //-------------------------------------------------------
