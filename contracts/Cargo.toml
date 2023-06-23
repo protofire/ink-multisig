@@ -1,6 +1,6 @@
 [package]
 name = "multisig"
-version = "4.1.0"
+version = "0.1.0"
 authors = ["0xLucca", "GabrielCamba"]
 edition = "2021"
 
