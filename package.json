@@ -1,0 +1,30 @@
+{
+  "name": "multisig_ink",
+  "version": "1.0.0",
+  "author": "0xLucca",
+  "license": "MIT",
+  "scripts": {
+    "test": "./utils/test-runner.sh",
+    "clean": "rm -rf ./typed_contracts/* && rm -rf ./artifacts/*",
+    "build": "cd contracts && cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts",
+    "exe": "npx ts-node"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@727-ventures/typechain-polkadot": "^1.1.0",
+    "@727-ventures/typechain-types": "^1.1.0",
+    "@polkadot/api": "^10.7.2",
+    "@types/node": "^18",
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.5",
+    "@types/mocha": "^10.0.1",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "mochawesome": "^7.1.3",
+    "ts-node": "^10.9.1"
+  }
+}
