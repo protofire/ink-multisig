@@ -2,7 +2,7 @@
   "name": "multisig_ink",
   "version": "1.0.0",
   "author": "0xLucca",
-  "license": "MIT",
+  "license": "GPLv3",
   "scripts": {
     "test": "./utils/test-runner.sh",
     "clean": "rm -rf ./typed_contracts/* && rm -rf ./artifacts/*",
