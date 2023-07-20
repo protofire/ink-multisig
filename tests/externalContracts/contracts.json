@@ -1,0 +1,9 @@
+{
+  "contracts": {
+    "payable_contract.contract": {
+      "constructorName": "default",
+      "constructorArgs": [],
+      "value": 0
+    }
+  }
+}
