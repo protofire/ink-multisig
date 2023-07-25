@@ -604,6 +604,11 @@ mod multi_sig {
     // Ensure the params of the constructor are valid
     // according to the rules of the contract
     fn ensure_creation_params(threshold: u8, owners_list: &Vec<AccountId>) -> Result<(), Error> {
+        // Check that owners are not empty
+        if owners_list.is_empty() {
+            return Err(Error::OwnersCantBeEmpty);
+        }
+
         // Check that threshold is not greater than owners
         if threshold > owners_list.len() as u8 {
             return Err(Error::ThresholdGreaterThanOwners);
@@ -612,11 +617,6 @@ mod multi_sig {
         // Check that threshold is not zero
         if threshold == 0 {
             return Err(Error::ThresholdCantBeZero);
-        }
-
-        // Check that owners are not empty
-        if owners_list.is_empty() {
-            return Err(Error::OwnersCantBeEmpty);
         }
 
         Ok(())
