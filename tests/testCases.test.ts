@@ -69,7 +69,7 @@ describe("Case 1", () => {
     // Get the arguments for the proposeTx contract call
 
     // Get the selector of the add_owner message
-    const selector = multisigMessageIndex.getSelectorByLabel("add_owner");
+    const selector = multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
 
     // Create the argument for the add_owner message in the specified format
     const arg = api.createType("AccountId", daveKeyringPair.address);
@@ -151,7 +151,7 @@ describe("Case 2", () => {
     // Get the arguments for the proposeTx contract call
 
     // Get the selector of the add_owner message
-    const selector = multisigMessageIndex.getSelectorByLabel("add_owner");
+    const selector = multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
 
     // Create the argument for the add_owner message in the specified format
     const arg = api.createType("AccountId", daveKeyringPair.address);
@@ -191,7 +191,7 @@ describe("Case 2", () => {
     // so it is not executed and automatically removed
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
-    
+
     // Dave is not added as a new owner
     const newOwners = (await multisig.query.getOwners()).value.unwrap();
     expect(newOwners).to.have.lengthOf(3);
