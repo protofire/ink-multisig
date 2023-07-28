@@ -14,15 +14,22 @@ interface FileContent {
   content: any;
 }
 
-export async function deployExternalContracts(api,keyring) {
+export async function deployExternalContracts(
+  api: ApiPromise,
+  keyring: Keyring
+) {
   try {
     let contractsNames = Object.keys(externalContracts);
-    let contractsFiles = readContractsFiles("../externalContracts",contractsNames);
+    let contractsFiles = readContractsFiles(
+      "../externalContracts",
+      contractsNames
+    );
 
     const deploymentPromises = contractsFiles.map(async (contractFile) => {
       const { fileName: contractName, content: contract } = contractFile;
-      const { constructorName, constructorArgs, value } = externalContracts[contractName];
-    
+      const { constructorName, constructorArgs, value } =
+        externalContracts[contractName];
+
       const contractAddress = await deployContract(
         api,
         keyring,
@@ -31,15 +38,20 @@ export async function deployExternalContracts(api,keyring) {
         constructorArgs,
         value
       );
-    
-      return { [contractName]: {
-        name: contractName,
-        address: contractAddress,
-        abi: contract,
-      }};
+
+      return {
+        [contractName]: {
+          name: contractName,
+          address: contractAddress,
+          abi: contract,
+        },
+      };
     });
-    
-    const deployedContracts = Object.assign({}, ...(await Promise.all(deploymentPromises)));
+
+    const deployedContracts = Object.assign(
+      {},
+      ...(await Promise.all(deploymentPromises))
+    );
 
     return deployedContracts;
   } catch (error) {
@@ -47,13 +59,16 @@ export async function deployExternalContracts(api,keyring) {
   }
 }
 
-function readContractsFiles(folderPath:string,contractsNames: string[]): FileContent[] {
+function readContractsFiles(
+  folderPath: string,
+  contractsNames: string[]
+): FileContent[] {
   const dirPath = path.join(__dirname, ".", folderPath);
   const fileArray: FileContent[] = [];
 
   contractsNames.forEach((fileName: string) => {
     const filePath = `${dirPath}/${fileName}`;
-    
+
     try {
       const fileContent = fs.readFileSync(filePath, "utf8");
       const jsonContent = JSON.parse(fileContent);
@@ -91,7 +106,7 @@ async function deployContract(
     const args = constructorArgs.length > 0 ? constructorArgs : [];
 
     let tx;
-    try{
+    try {
       tx = code.tx[constructorName]!(
         {
           gasLimit,
@@ -100,11 +115,10 @@ async function deployContract(
         },
         ...args
       );
-    }
-    catch(error){
+    } catch (error) {
       reject();
     }
-     
+
     let response;
     try {
       response = await _signAndSend(
