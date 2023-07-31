@@ -18,8 +18,11 @@ clean:            ## Clean the project.
 build-docker-image:
 	docker build -t ink-rust-env .
 
-build-contract:   ## Build the contracts.
+build-contract-release:   ## Build the contracts.
 	cd contracts && docker run -v "$(CURDIR)/contracts:/contracts" ink-rust-env cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
+
+build-contract-debug:   ## Build the contracts.
+	cd contracts && docker run -v "$(CURDIR)/contracts:/contracts" ink-rust-env cargo contract build && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
 
 node-download:    ## Download the substrate contracts node.
 	bash ./utils/download-node.sh
@@ -28,6 +31,6 @@ run:              ## Install dependencies, clean, build, and run tests.
 	yarn install
 	make clean
 	make build-docker-image
-	make build-contract
+	make build-contract-release
 	make node-download
 	make test
