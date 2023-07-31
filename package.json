@@ -4,7 +4,7 @@
   "author": "0xLucca",
   "license": "GPLv3",
   "scripts": {
-    "test": "./utils/test-runner.sh",
+    "test": "yarn mocha --config .mocharc.json",
     "clean": "rm -rf ./typed_contracts/* && rm -rf ./artifacts/*",
     "build": "cd contracts && cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts",
     "exe": "npx ts-node"

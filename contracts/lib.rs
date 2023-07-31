@@ -8,7 +8,7 @@ mod multi_sig {
     use ink::{
         env::{
             call::{build_call, ExecutionInput},
-            CallFlags,
+            CallFlags, Error as EnvError,
         },
         prelude::vec::Vec,
         storage::Mapping,
@@ -108,12 +108,30 @@ mod multi_sig {
         Failed(Error),
     }
 
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub enum WrappedEnvError {
+        /// Error upon decoding an encoded value.
+        Decode,
+        // The call to another contract has trapped.
+        CalleeTrapped,
+        /// The call to another contract has been reverted.
+        CalleeReverted,
+        /// Transfer failed for other not further specified reason. Most probably
+        /// reserved or locked balance of the sender that was preventing the transfer.
+        TransferFailed,
+        /// The account that was called is no contract, but a plain account.
+        NotCallable,
+        /// An unexpected error occurred.
+        Unexpected,
+    }
+
     // TODO_ Define the errors that can be returned
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         /// Env error encountered when executing the transaction
-        EnvExecutionFailed,
+        EnvExecutionFailed(WrappedEnvError),
         /// Transaction executed but Lang error encountered
         LangExecutionFailed(LangError),
         /// The owners list cannot be empty
@@ -481,7 +499,10 @@ mod multi_sig {
             let result = match tx_result {
                 Ok(Ok(bytes)) => TxResult::Success(bytes),
                 Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
-                Err(_e) => TxResult::Failed(Error::EnvExecutionFailed), //TODO handle error with custom wrapper
+                Err(e) => {
+                    let env_error = handle_env_error(e);
+                    TxResult::Failed(Error::EnvExecutionFailed(env_error))
+                }
             };
 
             // We need to load the storage again because the call might have changed it.
@@ -620,5 +641,16 @@ mod multi_sig {
         }
 
         Ok(())
+    }
+
+    fn handle_env_error(env_error: EnvError) -> WrappedEnvError {
+        match env_error {
+            EnvError::Decode(_) => WrappedEnvError::Decode,
+            EnvError::CalleeTrapped => WrappedEnvError::CalleeTrapped,
+            EnvError::CalleeReverted => WrappedEnvError::CalleeReverted,
+            EnvError::TransferFailed => WrappedEnvError::TransferFailed,
+            EnvError::NotCallable => WrappedEnvError::NotCallable,
+            _ => WrappedEnvError::Unexpected,
+        }
     }
 }
