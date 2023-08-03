@@ -19,10 +19,10 @@ build-docker-image:
 	docker build -t ink-rust-env .
 
 build-contract-release:   ## Build the contracts.
-	cd contracts && docker run -v "$(CURDIR)/contracts:/contracts" ink-rust-env cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
+	cd contracts && docker run -v "$(CURDIR)/contracts/multisig:/contracts" ink-rust-env cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/multisig/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/multisig/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
 
 build-contract-debug:   ## Build the contracts.
-	cd contracts && docker run -v "$(CURDIR)/contracts:/contracts" ink-rust-env cargo contract build && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
+	cd contracts && docker run -v "$(CURDIR)/contracts/multisig:/contracts" ink-rust-env cargo contract build && cd .. && mkdir -p artifacts && cp contracts/multisig/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/multisig/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
 
 node-download:    ## Download the substrate contracts node.
 	bash ./utils/download-node.sh
