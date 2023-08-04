@@ -1,0 +1,21 @@
+[package]
+name = "multisig-factory"
+version = "0.1.0"
+authors = ["0xLucca", "GabrielCamba"]
+edition = "2021"
+
+[dependencies]
+ink = { version = "4.1", default-features = false }
+
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.5", default-features = false, features = ["derive"], optional = true }
+
+multisig = { path = "../multisig", default-features = false, features = ["ink-as-dependency"] }
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = ["ink/std", "scale/std", "scale-info/std", "multisig/std"]
+ink-as-dependency = []

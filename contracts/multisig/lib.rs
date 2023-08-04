@@ -1,7 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
+pub use self::multisig::MultiSigRef;
+
 #[ink::contract]
-mod multi_sig {
+mod multisig {
 
     // Import the necessary dependencies
     use ink::LangError;
