@@ -516,13 +516,11 @@ mod multisig {
                 .returns::<Vec<u8>>()
                 .try_invoke();
 
-            ink::env::debug_println!("Result: {:?}", &tx_result);
             // Instead of just returning a custom Error we could return the error from the call
             let result = match tx_result {
                 Ok(Ok(bytes)) => TxResult::Success(bytes),
                 Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
                 Err(e) => {
-                    ink::env::debug_println!("Error: {:?}", &e);
                     let env_error = handle_env_error(e);
                     TxResult::Failed(Error::EnvExecutionFailed(env_error))
                 }
