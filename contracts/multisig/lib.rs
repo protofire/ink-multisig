@@ -8,6 +8,7 @@ mod multisig {
     // Import the necessary dependencies
     use ink::LangError;
     use ink::{
+        codegen::EmitEvent,
         env::{
             call::{build_call, ExecutionInput},
             CallFlags, Error as EnvError,
@@ -35,6 +36,8 @@ mod multisig {
             dest.write(self.0);
         }
     }
+
+    type Event = <MultiSig as ink::reflect::ContractEventBase>::Type;
 
     #[ink(event)]
     pub struct ThresholdChanged {
@@ -276,15 +279,18 @@ mod multisig {
             self.approvals
                 .insert((current_tx_id, self.env().caller()), &true);
 
-            self.env().emit_event(TransactionProposed {
-                tx_id: current_tx_id,
-                contract_address: tx.address,
-                selector: tx.selector,
-                input: tx.input,
-                transferred_value: tx.transferred_value,
-                gas_limit: tx.gas_limit,
-                allow_reentry: tx.allow_reentry,
-            });
+            Self::emit_event(
+                Self::env(),
+                Event::TransactionProposed(TransactionProposed {
+                    tx_id: current_tx_id,
+                    contract_address: tx.address,
+                    selector: tx.selector,
+                    input: tx.input,
+                    transferred_value: tx.transferred_value,
+                    gas_limit: tx.gas_limit,
+                    allow_reentry: tx.allow_reentry,
+                }),
+            );
 
             // If threshold is reached when proposed (threshold == 1), execute the transaction
             self.try_execute_tx(current_tx_id);
@@ -297,10 +303,15 @@ mod multisig {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.approve(tx_id)?;
-            self.env().emit_event(Approve {
-                tx_id,
-                owner: self.env().caller(),
-            });
+
+            Self::emit_event(
+                Self::env(),
+                Event::Approve(Approve {
+                    tx_id,
+                    owner: self.env().caller(),
+                }),
+            );
+
             self.try_execute_tx(tx_id);
             Ok(())
         }
@@ -310,10 +321,15 @@ mod multisig {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.reject(tx_id)?;
-            self.env().emit_event(Reject {
-                tx_id,
-                owner: self.env().caller(),
-            });
+
+            Self::emit_event(
+                Self::env(),
+                Event::Reject(Reject {
+                    tx_id,
+                    owner: self.env().caller(),
+                }),
+            );
+
             self.try_remove_tx(tx_id);
             Ok(())
         }
@@ -357,7 +373,7 @@ mod multisig {
             self.owners_list.push(owner);
 
             // emit event
-            self.env().emit_event(OwnerAdded { owner });
+            Self::emit_event(Self::env(), Event::OwnerAdded(OwnerAdded { owner }));
 
             Ok(())
         }
@@ -387,7 +403,7 @@ mod multisig {
             self.owners_list.retain(|&x| x != owner);
 
             // emit event
-            self.env().emit_event(OwnerRemoved { owner });
+            Self::emit_event(Self::env(), Event::OwnerRemoved(OwnerRemoved { owner }));
 
             Ok(())
         }
@@ -411,7 +427,10 @@ mod multisig {
             self.threshold = threshold;
 
             // emit event
-            self.env().emit_event(ThresholdChanged { threshold });
+            Self::emit_event(
+                Self::env(),
+                Event::ThresholdChanged(ThresholdChanged { threshold }),
+            );
 
             Ok(())
         }
@@ -428,7 +447,7 @@ mod multisig {
                 .map_err(|_| Error::TransferFailed)?;
 
             // emit event
-            self.env().emit_event(Transfer { to, value });
+            Self::emit_event(Self::env(), Event::Transfer(Transfer { to, value }));
 
             Ok(())
         }
@@ -519,7 +538,10 @@ mod multisig {
             self.remove_tx(tx_id);
 
             // Emit event
-            self.env().emit_event(TransactionExecuted { tx_id, result });
+            Self::emit_event(
+                Self::env(),
+                Event::TransactionExecuted(TransactionExecuted { tx_id, result }),
+            );
         }
 
         fn remove_tx(&mut self, tx_id: TxId) {
@@ -541,7 +563,10 @@ mod multisig {
             }
 
             // emit event
-            self.env().emit_event(TransactionRemoved { tx_id }); //TODO: Maybe dont emit this event from here and only emit it in the parent caller
+            Self::emit_event(
+                Self::env(),
+                Event::TransactionRemoved(TransactionRemoved { tx_id }),
+            );
         }
 
         fn approve(&mut self, tx_id: TxId) -> Result<(), Error> {
@@ -562,6 +587,20 @@ mod multisig {
             self.rejections_count.insert(tx_id, &(rejections + 1));
             self.approvals.insert((tx_id, self.env().caller()), &false);
             Ok(())
+        }
+
+        // We need this helper method for emitting events (rather than
+        // `Self::env().emit_event(_)`) because compiler will fail to
+        // resolve type boundaries if there are events from another, dependent
+        // contract. To verify, try replacing calls to
+        // `Self::emit_event` with `self::env().emit_event(_)` in the
+        // `../lib.rs`.
+        // This was taken from: https://github.com/Cardinal-Cryptography/bulletin-board-example/blob/main/contracts/highlighted_posts/lib.rs
+        fn emit_event<EE>(emitter: EE, event: Event)
+        where
+            EE: EmitEvent<MultiSig>,
+        {
+            emitter.emit_event(event);
         }
 
         //-------------------------------------------------------

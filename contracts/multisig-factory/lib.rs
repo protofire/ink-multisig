@@ -3,9 +3,12 @@
 #[ink::contract]
 mod multisig_factory {
 
+    use ink::codegen::EmitEvent;
     use ink::prelude::vec::Vec;
     use ink::ToAccountId;
     use multisig::MultiSigRef;
+
+    type Event = <MultiSigFactory as ink::reflect::ContractEventBase>::Type;
 
     #[ink(event)]
     pub struct NewMultisig {
@@ -43,7 +46,7 @@ mod multisig_factory {
             owners_list: Vec<AccountId>,
             salt: Vec<u8>,
         ) -> Result<(), Error> {
-            let multisig_ins = MultiSigRef::new(threshold, owners_list)
+            let multisig_ins = MultiSigRef::new(threshold, owners_list.clone())
                 .code_hash(self.multisig_codehash)
                 .endowment(0)
                 .salt_bytes(salt)
@@ -52,16 +55,32 @@ mod multisig_factory {
             match multisig_ins {
                 Ok(multisig) => {
                     let multisig_address = multisig.to_account_id();
-                    self.env().emit_event(NewMultisig {
-                        //TODO: Fix emit event error. Follow https://github.com/paritytech/ink/pull/1827
-                        multisig_address,
-                        threshold,
-                        owners_list,
-                    });
+                    Self::emit_event(
+                        Self::env(),
+                        Event::NewMultisig(NewMultisig {
+                            multisig_address,
+                            threshold,
+                            owners_list,
+                        }),
+                    );
                     Ok(())
                 }
                 Err(_) => Err(Error::InstantiationFailed),
             }
+        }
+
+        // We need this helper method for emitting events (rather than
+        // `Self::env().emit_event(_)`) because compiler will fail to
+        // resolve type boundaries if there are events from another, dependent
+        // contract. To verify, try replacing calls to
+        // `Self::emit_event` with `self::env().emit_event(_)` in the
+        // `../lib.rs`.
+        // This was taken from: https://github.com/Cardinal-Cryptography/bulletin-board-example/blob/main/contracts/highlighted_posts/lib.rs
+        fn emit_event<EE>(emitter: EE, event: Event)
+        where
+            EE: EmitEvent<MultiSigFactory>,
+        {
+            emitter.emit_event(event);
         }
     }
 }
