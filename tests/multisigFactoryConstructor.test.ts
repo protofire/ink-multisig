@@ -4,6 +4,7 @@ import FactoryContract from "../typed_contracts/multisig-factory/contracts/multi
 import MultisigContract from "../typed_contracts/multisig/contracts/multisig";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import { ContractFile } from "../typed_contracts/multisig/contract-info/multisig";
+import { generateHash } from "./utils/convertions";
 
 let api;
 let keyring;
@@ -68,7 +69,12 @@ describe("Multisig Factory", () => {
     });
 
     // Deploy a new multisig contract from the factory
-    await factoryContract.tx.newMultisig(1, [aliceKeyringPair.address],[0]); //TODO: Use random salt
+    const salt = generateHash(Date.now().toString());
+    await factoryContract.tx.newMultisig(
+      1,
+      [aliceKeyringPair.address],
+      salt
+    );
 
     // Check that the new multisig contract was deployed correctly
     expect(newMultisigEvent.threshold).to.equal(1);
@@ -82,10 +88,14 @@ describe("Multisig Factory", () => {
     );
 
     // Check that the multisig contract data is correct
-    const multisigThreshold = (await multisigContract.query.getThreshold()).value.unwrap();
+    const multisigThreshold = (
+      await multisigContract.query.getThreshold()
+    ).value.unwrap();
     expect(multisigThreshold).to.equal(1);
 
-    const multisigOwners = (await multisigContract.query.getOwners()).value.unwrap();
-    expect(multisigOwners[0]).to.equal(aliceKeyringPair.address)
+    const multisigOwners = (
+      await multisigContract.query.getOwners()
+    ).value.unwrap();
+    expect(multisigOwners[0]).to.equal(aliceKeyringPair.address);
   });
 });
