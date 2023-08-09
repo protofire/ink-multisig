@@ -1,3 +1,17 @@
+//! # Multisig contract
+//! This contract allows to create a multisig wallet.
+//!
+//! ## Overview
+//!
+//! The contract allows to create a multisig wallet with a list of owners and a threshold.
+//! The threshold is the minimum number of approvals required to execute a transaction.
+//! In order to be transparent it does not require off-chain signs and everything is being done on-chain.
+//!
+//! ## DISCLAIMER
+//!
+//! This contract is not audited and should not used in production under your own risk.
+//!
+
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 pub use self::multisig::MultiSigRef;
@@ -20,99 +34,140 @@ mod multisig {
     use scale::Output;
 
     // Defined the types used in the contract
+    /// TxId is the type used to identify a transaction in the contract
     type TxId = u128;
+    /// Approvals is the type used to count the number of approvals for a transaction
     type Approvals = u8;
+    /// Rejections is the type used to count the number of rejections for a transaction
     type Rejections = u8;
 
-    // Define the constants used in the contract
+    /// Define the constants used in the contract this constants may change depending
+    /// on the kind of usage of the contract
+    /// MAX_OWNERS is the maximum number of owners that can be added to the contract
+    /// MAX_TRANSACTIONS is the maximum number of transactions that can be added to the contract
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
     const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
 
-    // Struct to SCALE encode the input of the call
+    /// Struct to SCALE encode the input of the call
     struct InputArgs<'a>(&'a [u8]);
 
+    /// Implementation of the SCALE encoding for the InputArgs struct
     impl<'a> scale::Encode for InputArgs<'a> {
         fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
             dest.write(self.0);
         }
     }
 
+    /// Define the events that will be emitted by the contract to be distinguished from the
+    /// events defined in the factory contract
     type Event = <MultiSig as ink::reflect::ContractEventBase>::Type;
 
+    /// Emitted when the threshold is changed
     #[ink(event)]
     pub struct ThresholdChanged {
+        /// The new threshold
         #[ink(topic)]
         threshold: u8,
     }
 
+    /// Emmited when an owner is added
     #[ink(event)]
     pub struct OwnerAdded {
+        /// New owner's account id
         #[ink(topic)]
         owner: AccountId,
     }
 
+    /// Emmited when an owner is removed
     #[ink(event)]
     pub struct OwnerRemoved {
+        /// Removed owner's account id
         #[ink(topic)]
         owner: AccountId,
     }
 
+    /// Emmited when a transaction is proposed
     #[ink(event)]
     pub struct TransactionProposed {
+        /// Transaction id
         #[ink(topic)]
         tx_id: TxId,
+        /// Contract address
         #[ink(topic)]
         contract_address: AccountId,
+        /// Selector on the contract
         selector: [u8; 4],
+        /// Input of the call
         input: Vec<u8>,
+        /// Transferred value of the call
         transferred_value: Balance,
+        /// Gas limit of the call
         gas_limit: u64,
+        /// Allow reentry flag of the call
         allow_reentry: bool,
     }
 
+    /// Emmited when a transaction is approved
     #[ink(event)]
     pub struct Approve {
+        /// Transaction id
         #[ink(topic)]
         tx_id: TxId,
+        /// approver's account id
         #[ink(topic)]
         owner: AccountId,
     }
 
+    /// Emmited when a transaction is rejected
     #[ink(event)]
     pub struct Reject {
+        /// Transaction id
         #[ink(topic)]
         tx_id: TxId,
+        /// rejecter's account id
         #[ink(topic)]
         owner: AccountId,
     }
 
+    /// Emmited when a transaction is executed
     #[ink(event)]
     pub struct TransactionExecuted {
+        /// Transaction id
         #[ink(topic)]
         tx_id: TxId,
+        /// Result of the transaction execution
         result: TxResult,
     }
 
+    /// Emmited when a transaction is removed
     #[ink(event)]
     pub struct TransactionRemoved {
+        /// Transaction id
         #[ink(topic)]
         tx_id: TxId,
     }
 
+    /// Emmited when a transfer is performed
     #[ink(event)]
     pub struct Transfer {
+        /// Receiver's account id
         #[ink(topic)]
         to: AccountId,
+        /// Amount of the transfer
         value: Balance,
     }
 
+    /// Transaction result information that has either a success or a failure
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum TxResult {
+        /// Transaction executed successfully with the given result
         Success(Vec<u8>),
+        /// Transaction failed with the given error
         Failed(Error),
     }
 
+    /// Wrapped environment error types that can be returned by the contract
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum WrappedEnvError {
@@ -131,7 +186,7 @@ mod multisig {
         Unexpected,
     }
 
-    // TODO_ Define the errors that can be returned
+    /// Error types that can be returned by the contract
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
@@ -165,43 +220,71 @@ mod multisig {
         TransferFailed,
     }
 
-    // Structure that represents a transaction to be performed when the threshold is reached
+    /// Structure that represents a transaction to be performed when the threshold is reached
     #[derive(scale::Decode, scale::Encode)]
     #[cfg_attr(
         feature = "std",
         derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
     )]
     pub struct Transaction {
+        /// Address of the contract to be called
         pub address: AccountId,
+        /// Selector of the function to be called
         pub selector: [u8; 4],
+        /// Input of the function to be called
         pub input: Vec<u8>,
+        /// Transferred value of the call
         pub transferred_value: Balance,
+        /// Gas limit of the call
         pub gas_limit: u64,
+        /// Allow reentry flag of the call
         pub allow_reentry: bool,
     }
 
-    // Structure that represents the multisig contract
-    // It contains the list of owners, the threshold, the list of transactions and the list of approvals
-    // The presence of redundant information between owners_list and owners, and transactions_id_list and transactions
-    // is intentional to make it easier the elements access.
-    // Although they represent the same TxId, this redundancy is maintained in order to support efficient iteration over
-    // 'transactions_id_list' while fetching a transaction. By duplicating the tx IDs, we achieve a constant time complexity of
-    // O(1) when accessing tx information directly from 'transacctions'.
+    /// Structure that represents the multisig contract
+    /// It contains the list of owners, the threshold, the list of transactions and the list of approvals
+    /// The presence of redundant information between owners_list and owners, and transactions_id_list and transactions
+    /// is intentional to make it easier the elements access.
+    /// Although they represent the same TxId, this redundancy is maintained in order to support efficient iteration over
+    /// 'transactions_id_list' while fetching a transaction. By duplicating the tx IDs, we achieve a constant time complexity of
+    /// O(1) when accessing tx information directly from 'transacctions'.
     #[ink(storage)]
     #[derive(Default)]
     pub struct MultiSig {
+        /// List of owners of the multisig contract
+        /// Owners are account ids that can propose, approve or reject transactions
         owners_list: Vec<AccountId>,
+        /// Mapping of owners to check if an account id is an owner
         owners: Mapping<AccountId, ()>,
+        /// Threshold of approvals required to execute a transaction
         threshold: u8,
+        /// Next transaction id to be used (just a counter)
         next_tx_id: TxId,
+        /// List of transactions that have been proposed
         txs_id_list: Vec<TxId>,
+        /// Mapping of transactions to fetch a transaction by its id
         txs: Mapping<TxId, Transaction>,
+        /// Mapping of approvals to check which owner has approved or rejected a transaction
         approvals: Mapping<(TxId, AccountId), bool>,
+        /// Mapping of approvals count to check how many approvals a transaction has
         approvals_count: Mapping<TxId, Approvals>,
+        /// Mapping of rejections count to check how many rejections a transaction has
         rejections_count: Mapping<TxId, Rejections>,
     }
 
     impl MultiSig {
+        /// Constructor that creates a multisig contract with a list of owners and a threshold
+        /// The threshold is the minimum number of approvals required to execute a transaction
+        /// All the representation invariant checks are performed in the constructor
+        /// The list of owners is a list of account ids that can propose, approve or reject transactions
+        /// The list of owners cannot be empty
+        /// The owners cannot be duplicated
+        /// The threshold cannot be greater than the number of owners
+        /// The threshold cannot be zero
+        /// The maximum number of owners is defined by MAX_OWNERS
+        /// The maximum number of transactions is defined by MAX_TRANSACTIONS
+        /// The transaction Id is a counter that starts at 0 and is incremented by 1 for each transaction
+        /// The transaction Id cannot overflow
         #[ink(constructor)]
         pub fn new(threshold: u8, mut owners_list: Vec<AccountId>) -> Result<Self, Error> {
             // Remove duplicated owners
@@ -230,8 +313,13 @@ mod multisig {
             })
         }
 
-        // Default constructor will create a contract wallet
-        // Just a single owner (the caller) and a threshold of 1
+        /// Constructor that creates a multisig contract with a single owner and a threshold of 1
+        /// The owner is the caller of the contract
+        /// The threshold is 1
+        /// The maximum number of owners is defined by MAX_OWNERS
+        /// The maximum number of transactions is defined by MAX_TRANSACTIONS
+        /// The transaction Id is a counter that starts at 0 and is incremented by 1 for each transaction
+        /// The transaction Id cannot overflow
         #[ink(constructor)]
         pub fn default() -> Result<Self, Error> {
             let mut owners = Mapping::new();
@@ -253,6 +341,14 @@ mod multisig {
             })
         }
 
+        /// Transaction proposal
+        /// The parameters of the transaction are passed as a Transaction struct
+        /// The caller of this function must be an owner
+        /// The maximum number of transactions cannot be passed
+        /// The transaction Id cannot overflow
+        /// The transaction is stored in the contract
+        /// The transaction is initialized with 1 approval and 0 rejections
+        /// Emit TransactionProposed event
         #[ink(message)]
         pub fn propose_tx(&mut self, tx: Transaction) -> Result<(), Error> {
             // Check that the caller is an owner
@@ -298,6 +394,14 @@ mod multisig {
             Ok(())
         }
 
+        /// Transaction approval
+        /// The caller of this function must be an owner
+        /// The parameter of the transaction is the transaction Id
+        /// The transaction Id must be valid
+        /// The caller must not have voted yet
+        /// The transaction is approved
+        /// Emit Approve event
+        /// The transaction is executed if the threshold is met
         #[ink(message)]
         pub fn approve_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             // perform checks
@@ -316,6 +420,14 @@ mod multisig {
             Ok(())
         }
 
+        /// Transaction rejection
+        /// The caller of this function must be an owner
+        /// The parameter of the transaction is the transaction Id
+        /// The transaction Id must be valid
+        /// The caller must not have voted yet
+        /// The transaction is rejected
+        /// Emit Reject event
+        /// The transaction is removed if the threshold cannot be met with the remaining approvals
         #[ink(message)]
         pub fn reject_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             // perform checks
@@ -334,8 +446,13 @@ mod multisig {
             Ok(())
         }
 
+        /// Transaction execution
+        /// The transaction Id must be valid
+        /// The parameter of the transaction is the transaction Id
+        /// The threshold must be met in order to execute the transaction
         #[ink(message)]
         pub fn try_execute_tx(&mut self, tx_id: TxId) {
+            self.is_tx_valid(tx_id)?;
             // check threshold met
             if self.check_threshold_met(tx_id) {
                 // execute transaction
@@ -343,8 +460,13 @@ mod multisig {
             }
         }
 
+        /// Transaction removal
+        /// The transaction Id must be valid
+        /// The parameter of the transaction is the transaction Id
+        /// The threshold must not be met in order to remove the transaction
         #[ink(message)]
         pub fn try_remove_tx(&mut self, tx_id: TxId) {
+            self.is_tx_valid(tx_id)?;
             // check if threshold can be met with the remaining approvals
             if !self.check_threshold_can_be_met(tx_id) {
                 // delete transaction
@@ -353,6 +475,14 @@ mod multisig {
         }
 
         // Owner management
+        /// Owner addition
+        /// The caller of this function must be the multisig contract itself
+        /// The parameter of the transaction is the owner's account id
+        /// Perform checking representation invariants
+        /// The maximum number of owners cannot be reached
+        /// The owner cannot be already an owner
+        /// The owner is added
+        /// Emit OwnerAdded event
         #[ink(message)]
         pub fn add_owner(&mut self, owner: AccountId) -> Result<(), Error> {
             // Check that caller is multisig
@@ -378,6 +508,14 @@ mod multisig {
             Ok(())
         }
 
+        /// Owner removal
+        /// The caller of this function must be the multisig contract itself
+        /// The parameter of the transaction is the owner's account id
+        /// Perform checking representation invariants
+        /// The owners cannot be empty after removing
+        /// The threshold cannot be greater than the number of owners after removing
+        /// The owner is removed
+        /// Emit OwnerRemoved event
         #[ink(message)]
         pub fn remove_owner(&mut self, owner: AccountId) -> Result<(), Error> {
             // Check that caller is multisig
@@ -408,6 +546,14 @@ mod multisig {
             Ok(())
         }
 
+        /// Threshold change
+        /// The caller of this function must be the multisig contract itself
+        /// The parameter of the transaction is the new threshold
+        /// Perform checking representation invariants
+        /// The threshold cannot be greater than the number of owners
+        /// The threshold cannot be zero
+        /// The threshold is changed
+        /// Emit ThresholdChanged event
         #[ink(message)]
         pub fn change_threshold(&mut self, threshold: u8) -> Result<(), Error> {
             // Check that caller is multisig
@@ -435,6 +581,11 @@ mod multisig {
             Ok(())
         }
 
+        /// Transfer funds from the contract to another account
+        /// The caller of this function must be the multisig contract itself
+        /// The parameter of the transaction is the receiver's account id and the amount to be transferred
+        /// The transfer is performed
+        /// Emit Transfer event
         #[ink(message)]
         pub fn transfer(&mut self, to: AccountId, value: Balance) -> Result<(), Error> {
             // Check that caller is multisig
@@ -454,6 +605,7 @@ mod multisig {
 
         //-------------------------------------------------------
         // Internal functions
+        //-------------------------------------------------------
 
         fn ensure_self_call(&self) -> Result<(), Error> {
             if self.env().caller() != self.env().account_id() {
@@ -605,25 +757,35 @@ mod multisig {
 
         //-------------------------------------------------------
         // Read functions
+        //-------------------------------------------------------
 
-        // Owners
+        /// Owners
+        /// Get Owners
+        /// The owners list is a list of account ids that can propose, approve or reject transactions
         #[ink(message)]
         pub fn get_owners(&self) -> Vec<AccountId> {
             self.owners_list.clone()
         }
 
+        /// Is owner
+        /// The parameter of the transaction is the owner's account id
+        /// The owner is checked if it is an owner
         #[ink(message)]
         pub fn is_owner(&self, owner: AccountId) -> bool {
             self.owners.contains(owner)
         }
 
-        // Treshold
+        /// Treshold
+        /// Get Threshold
+        /// The threshold is the current minimum number of approvals required to execute a transaction
         #[ink(message)]
         pub fn get_threshold(&self) -> u8 {
             self.threshold
         }
 
-        // Transactions
+        /// Transactions
+        /// Get Next Transaction Id
+        /// Fetches the next transaction id is the next transaction id to be used
         #[ink(message)]
         pub fn get_next_tx_id(&self) -> TxId {
             self.next_tx_id
