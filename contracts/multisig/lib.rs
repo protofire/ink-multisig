@@ -785,22 +785,30 @@ mod multisig {
 
         /// Transactions
         /// Get Next Transaction Id
-        /// Fetches the next transaction id is the next transaction id to be used
+        /// Returns the next transaction id
         #[ink(message)]
         pub fn get_next_tx_id(&self) -> TxId {
             self.next_tx_id
         }
 
+        /// Get Active Transactions Id List
+        /// Returns the list of active transactions
         #[ink(message)]
         pub fn get_active_txid_list(&self) -> Vec<TxId> {
             self.txs_id_list.clone()
         }
 
+        /// Get Transaction
+        /// The parameter of the transaction is the transaction id
+        /// Returns the transaction or None if the transaction id is not valid
         #[ink(message)]
         pub fn get_tx(&self, index: TxId) -> Option<Transaction> {
             self.txs.get(index)
         }
 
+        /// Is Transaction Valid
+        /// The parameter of the transaction is the transaction id
+        /// Returns a result with () if the transaction id is valid or an Error if it is not valid
         #[ink(message)]
         pub fn is_tx_valid(&self, tx_id: TxId) -> Result<(), Error> {
             self.txs
@@ -809,16 +817,25 @@ mod multisig {
                 .ok_or(Error::InvalidTxId)
         }
 
+        /// Get Transaction Approvals
+        /// The parameter of the transaction is the transaction id
+        /// Returns the number of approvals for the transaction if the transaction id is valid or None if it is not valid
         #[ink(message)]
         pub fn get_tx_approvals(&self, tx_id: TxId) -> Option<u8> {
             self.approvals_count.get(tx_id)
         }
 
+        /// Get Transaction Rejections
+        /// The parameter of the transaction is the transaction id
+        /// Returns the number of rejections for the transaction if the transaction id is valid or None if it is not valid
         #[ink(message)]
         pub fn get_tx_rejections(&self, tx_id: TxId) -> Option<u8> {
             self.rejections_count.get(tx_id)
         }
 
+        /// Get Transaction Approval For Account
+        /// The parameters of the transaction are the transaction id and the account id
+        /// Returns true if the account has approved the transaction, false if the account has rejected the transaction or None if the transaction id is not valid
         #[ink(message)]
         pub fn get_tx_approval_for_account(&self, tx_id: TxId, owner: AccountId) -> Option<bool> {
             self.approvals.get((tx_id, owner))
