@@ -44,7 +44,7 @@ mod multisig {
     /// Define the constants used in the contract this constants may change depending
     /// on the kind of usage of the contract
     /// MAX_OWNERS is the maximum number of owners that can be added to the contract
-    /// MAX_TRANSACTIONS is the maximum number of transactions that can be added to the contract
+    /// MAX_TRANSACTIONS is the maximum number of transactions that can be active at the same time
     const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
     const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
 
