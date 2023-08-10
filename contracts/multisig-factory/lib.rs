@@ -9,6 +9,10 @@
 //! The MultiSigFactory contract is used to deploy new MultiSig contracts to
 //! keep track of the deployed MultiSig contracts and creation parameters.
 //!
+//! ## DISCLAIMER
+//!
+//! This contract is not audited and should not be used in production. Use it under your own risk.
+//!
 
 #[ink::contract]
 mod multisig_factory {

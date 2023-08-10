@@ -9,7 +9,7 @@
 //!
 //! ## DISCLAIMER
 //!
-//! This contract is not audited and should not used in production under your own risk.
+//! This contract is not audited and should not be used in production. Use it under your own risk.
 //!
 
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
