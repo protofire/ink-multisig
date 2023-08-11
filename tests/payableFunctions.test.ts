@@ -51,7 +51,7 @@ describe("Test payable message", () => {
     // Create a new multisig contract
     const constructors = new Constructors(api, aliceKeyringPair);
 
-    const { address: multisigAddress } = await constructors.default();
+    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address])
 
     // Bind the contract to the new address
     const multisig = new Contract(multisigAddress, aliceKeyringPair, api);
