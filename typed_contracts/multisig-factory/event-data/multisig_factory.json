@@ -1,0 +1,3 @@
+{
+"NewMultisig": {"name":"NewMultisig","body":{"multisigAddress":{"name":"AccountId","body":"string | number[]","isResult":false,"isPrimitive":true,"isConvertable":false},"threshold":{"name":"number","isResult":false,"isPrimitive":true,"isConvertable":false},"ownersList":{"name":"Array","body":{"0":{"name":"AccountId","body":"string | number[]","isResult":false,"isPrimitive":true,"isConvertable":false}},"isResult":false,"isPrimitive":false,"isConvertable":false},"salt":{"name":"Array","body":{"0":{"name":"number","isResult":false,"isPrimitive":true,"isConvertable":false}},"isResult":false,"isPrimitive":false,"isConvertable":false}},"isResult":false,"isPrimitive":false,"isConvertable":false}
+}

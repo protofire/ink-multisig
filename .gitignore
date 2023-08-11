@@ -1,6 +1,4 @@
 node_modules
 contracts/**/target/
-artifacts
 .DS_Store
 contracts_node
-typed_contracts
