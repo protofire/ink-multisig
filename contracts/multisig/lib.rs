@@ -27,7 +27,7 @@ mod multisig {
             call::{build_call, ExecutionInput},
             CallFlags, Error as EnvError,
         },
-        prelude::vec::Vec,
+        prelude::{format, string::String, vec::Vec},
         storage::Mapping,
     };
     use openbrush::traits::Flush;
@@ -175,31 +175,12 @@ mod multisig {
         Failed(Error),
     }
 
-    /// Wrapped environment error types that can be returned by the contract
-    #[derive(scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub enum WrappedEnvError {
-        /// Error upon decoding an encoded value.
-        Decode,
-        // The call to another contract has trapped.
-        CalleeTrapped,
-        /// The call to another contract has been reverted.
-        CalleeReverted,
-        /// Transfer failed for other not further specified reason. Most probably
-        /// reserved or locked balance of the sender that was preventing the transfer.
-        TransferFailed,
-        /// The account that was called is no contract, but a plain account.
-        NotCallable,
-        /// An unexpected error occurred.
-        Unexpected,
-    }
-
     /// Error types that can be returned by the contract
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         /// Env error encountered when executing the transaction
-        EnvExecutionFailed(WrappedEnvError),
+        EnvExecutionFailed(String),
         /// Transaction executed but Lang error encountered
         LangExecutionFailed(LangError),
         /// The owners list cannot be empty
@@ -226,6 +207,12 @@ mod multisig {
         InvalidTxId,
         /// The transfer has failed
         TransferFailed,
+    }
+
+    impl From<EnvError> for Error {
+        fn from(e: EnvError) -> Self {
+            Error::EnvExecutionFailed(format!("{:?}", e))
+        }
     }
 
     /// Structure that represents a transaction to be performed when the threshold is reached
@@ -682,10 +669,7 @@ mod multisig {
             let result = match tx_result {
                 Ok(Ok(bytes)) => TxResult::Success(bytes),
                 Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
-                Err(e) => {
-                    let env_error = handle_env_error(e);
-                    TxResult::Failed(Error::EnvExecutionFailed(env_error))
-                }
+                Err(e) => TxResult::Failed(Error::from(e)),
             };
 
             // We need to load the storage again because the call might have changed it.
@@ -884,16 +868,5 @@ mod multisig {
         }
 
         Ok(())
-    }
-
-    fn handle_env_error(env_error: EnvError) -> WrappedEnvError {
-        match env_error {
-            EnvError::Decode(_) => WrappedEnvError::Decode,
-            EnvError::CalleeTrapped => WrappedEnvError::CalleeTrapped,
-            EnvError::CalleeReverted => WrappedEnvError::CalleeReverted,
-            EnvError::TransferFailed => WrappedEnvError::TransferFailed,
-            EnvError::NotCallable => WrappedEnvError::NotCallable,
-            _ => WrappedEnvError::Unexpected,
-        }
     }
 }
