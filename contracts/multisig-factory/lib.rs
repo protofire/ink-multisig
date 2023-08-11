@@ -36,6 +36,8 @@ mod multisig_factory {
         threshold: u8,
         /// The list of owners of the deployed MultiSig contract.
         owners_list: Vec<AccountId>,
+        /// The salt used to deploy the MultiSig contract.
+        salt: Vec<u8>,
     }
 
     /// Error type for the MultiSigFactory contract.
@@ -78,7 +80,7 @@ mod multisig_factory {
             let multisig_ins = MultiSigRef::new(threshold, owners_list.clone())
                 .code_hash(self.multisig_codehash)
                 .endowment(0)
-                .salt_bytes(salt)
+                .salt_bytes(salt.clone())
                 .instantiate();
 
             match multisig_ins {
@@ -90,6 +92,7 @@ mod multisig_factory {
                             multisig_address,
                             threshold,
                             owners_list,
+                            salt,
                         }),
                     );
                     Ok(())

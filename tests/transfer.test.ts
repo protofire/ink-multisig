@@ -44,7 +44,7 @@ describe("Transfer function", () => {
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
-    const { address: multisigAddress } = await constructors.default();
+    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address]);
     expect(multisigAddress).to.exist;
 
     // Bind the contract to the new address
@@ -111,7 +111,7 @@ describe("Transfer function", () => {
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
-    const { address: multisigAddress } = await constructors.default();
+    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address])
     expect(multisigAddress).to.exist;
 
     // Bind the contract to the new address
@@ -158,7 +158,7 @@ describe("Transfer function", () => {
     await multisig.tx.proposeTx(transferTx);
     
     //TODO: We expected the transaction to fail with TransferFailed but it fails with Decode
-    expect(transferEvent).to.have.nested.property('result.failed.envExecutionFailed', "Decode");
+    expect(transferEvent).to.have.nested.property('result.failed.envExecutionFailed', "Decode(Error)");
   });
 
 });

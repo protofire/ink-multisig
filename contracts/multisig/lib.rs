@@ -27,7 +27,7 @@ mod multisig {
             call::{build_call, ExecutionInput},
             CallFlags, Error as EnvError,
         },
-        prelude::vec::Vec,
+        prelude::{format, string::String, vec::Vec},
         storage::Mapping,
     };
     use openbrush::traits::Flush;
@@ -45,8 +45,8 @@ mod multisig {
     /// on the kind of usage of the contract
     /// MAX_OWNERS is the maximum number of owners that can be added to the contract
     /// MAX_TRANSACTIONS is the maximum number of transactions that can be active at the same time
-    const MAX_OWNERS: u8 = 10; //TODO Review this value and add justification
-    const MAX_TRANSACTIONS: u8 = 10; //TODO Review this value and add justification
+    const MAX_OWNERS: u8 = 10;
+    const MAX_TRANSACTIONS: u8 = 10;
 
     /// Struct to SCALE encode the input of the call
     struct InputArgs<'a>(&'a [u8]);
@@ -139,6 +139,14 @@ mod multisig {
         result: TxResult,
     }
 
+    /// Emmited when a transaction is cancelled
+    #[ink(event)]
+    pub struct TransactionCancelled {
+        /// Transaction id
+        #[ink(topic)]
+        tx_id: TxId,
+    }
+
     /// Emmited when a transaction is removed
     #[ink(event)]
     pub struct TransactionRemoved {
@@ -167,31 +175,12 @@ mod multisig {
         Failed(Error),
     }
 
-    /// Wrapped environment error types that can be returned by the contract
-    #[derive(scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub enum WrappedEnvError {
-        /// Error upon decoding an encoded value.
-        Decode,
-        // The call to another contract has trapped.
-        CalleeTrapped,
-        /// The call to another contract has been reverted.
-        CalleeReverted,
-        /// Transfer failed for other not further specified reason. Most probably
-        /// reserved or locked balance of the sender that was preventing the transfer.
-        TransferFailed,
-        /// The account that was called is no contract, but a plain account.
-        NotCallable,
-        /// An unexpected error occurred.
-        Unexpected,
-    }
-
     /// Error types that can be returned by the contract
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum Error {
         /// Env error encountered when executing the transaction
-        EnvExecutionFailed(WrappedEnvError),
+        EnvExecutionFailed(String),
         /// Transaction executed but Lang error encountered
         LangExecutionFailed(LangError),
         /// The owners list cannot be empty
@@ -218,6 +207,12 @@ mod multisig {
         InvalidTxId,
         /// The transfer has failed
         TransferFailed,
+    }
+
+    impl From<EnvError> for Error {
+        fn from(e: EnvError) -> Self {
+            Error::EnvExecutionFailed(format!("{:?}", e))
+        }
     }
 
     /// Structure that represents a transaction to be performed when the threshold is reached
@@ -313,34 +308,6 @@ mod multisig {
             })
         }
 
-        /// Constructor that creates a multisig contract with a single owner and a threshold of 1
-        /// The owner is the caller of the contract
-        /// The threshold is 1
-        /// The maximum number of owners is defined by MAX_OWNERS
-        /// The maximum number of transactions is defined by MAX_TRANSACTIONS
-        /// The transaction Id is a counter that starts at 0 and is incremented by 1 for each transaction
-        /// The transaction Id cannot overflow
-        #[ink(constructor)]
-        pub fn default() -> Result<Self, Error> {
-            let mut owners = Mapping::new();
-            let mut owners_list = Vec::new();
-            owners.insert(Self::env().caller(), &());
-            owners_list.push(Self::env().caller());
-
-            // sets the threshold to 1
-            Ok(Self {
-                owners_list,
-                owners,
-                threshold: 1,
-                next_tx_id: 0,
-                txs_id_list: Vec::new(),
-                txs: Mapping::new(),
-                approvals: Mapping::new(),
-                approvals_count: Mapping::new(),
-                rejections_count: Mapping::new(),
-            })
-        }
-
         /// Transaction proposal
         /// The parameters of the transaction are passed as a Transaction struct
         /// The caller of this function must be an owner
@@ -389,7 +356,7 @@ mod multisig {
             );
 
             // If threshold is reached when proposed (threshold == 1), execute the transaction
-            self.try_execute_tx(current_tx_id);
+            self._try_execute_tx(current_tx_id);
 
             Ok(())
         }
@@ -416,7 +383,7 @@ mod multisig {
                 }),
             );
 
-            self.try_execute_tx(tx_id);
+            self._try_execute_tx(tx_id);
             Ok(())
         }
 
@@ -442,7 +409,7 @@ mod multisig {
                 }),
             );
 
-            self.try_remove_tx(tx_id);
+            self._try_remove_tx(tx_id);
             Ok(())
         }
 
@@ -451,13 +418,10 @@ mod multisig {
         /// The parameter of the transaction is the transaction Id
         /// The threshold must be met in order to execute the transaction
         #[ink(message)]
-        pub fn try_execute_tx(&mut self, tx_id: TxId) {
+        pub fn try_execute_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             self.is_tx_valid(tx_id)?;
-            // check threshold met
-            if self.check_threshold_met(tx_id) {
-                // execute transaction
-                self.execute_tx(tx_id);
-            }
+            self._try_execute_tx(tx_id);
+            Ok(())
         }
 
         /// Transaction removal
@@ -465,13 +429,10 @@ mod multisig {
         /// The parameter of the transaction is the transaction Id
         /// The threshold must not be met in order to remove the transaction
         #[ink(message)]
-        pub fn try_remove_tx(&mut self, tx_id: TxId) {
+        pub fn try_remove_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
             self.is_tx_valid(tx_id)?;
-            // check if threshold can be met with the remaining approvals
-            if !self.check_threshold_can_be_met(tx_id) {
-                // delete transaction
-                self.remove_tx(tx_id);
-            }
+            self._try_remove_tx(tx_id);
+            Ok(())
         }
 
         // Owner management
@@ -655,6 +616,14 @@ mod multisig {
             Ok(())
         }
 
+        fn _try_execute_tx(&mut self, tx_id: TxId) {
+            // check threshold met
+            if self.check_threshold_met(tx_id) {
+                // execute transaction
+                self.execute_tx(tx_id);
+            }
+        }
+
         fn execute_tx(&mut self, tx_id: TxId) {
             // Fetch the transaction
             let tx = self.get_tx(tx_id).expect("This should never fail because we are checking the tx_id before calling this function");
@@ -662,7 +631,7 @@ mod multisig {
             let tx_result = build_call::<<Self as ::ink::env::ContractEnv>::Env>()
                 .call(tx.address)
                 .gas_limit(tx.gas_limit)
-                .transferred_value(tx.transferred_value) //TODO: check if we can use the contract balance instead of the transferred value
+                .transferred_value(tx.transferred_value)
                 .call_flags(CallFlags::default().set_allow_reentry(tx.allow_reentry))
                 .exec_input(ExecutionInput::new(tx.selector.into()).push_arg(InputArgs(&tx.input)))
                 .returns::<Vec<u8>>()
@@ -672,10 +641,7 @@ mod multisig {
             let result = match tx_result {
                 Ok(Ok(bytes)) => TxResult::Success(bytes),
                 Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
-                Err(e) => {
-                    let env_error = handle_env_error(e);
-                    TxResult::Failed(Error::EnvExecutionFailed(env_error))
-                }
+                Err(e) => TxResult::Failed(Error::from(e)),
             };
 
             // We need to load the storage again because the call might have changed it.
@@ -683,7 +649,7 @@ mod multisig {
             // Importing openbrush 3.1.0 forced us to downgrade ink to 4.1.0
             // check if it is reentrant for the same contract to perform the loading again
             if tx.allow_reentry && tx.address == self.env().account_id() {
-                self.load(); //TODO check if we create some vulnerabilities with this
+                self.load();
             }
 
             // Delete the transaction from the storage
@@ -694,6 +660,19 @@ mod multisig {
                 Self::env(),
                 Event::TransactionExecuted(TransactionExecuted { tx_id, result }),
             );
+        }
+
+        fn _try_remove_tx(&mut self, tx_id: TxId) {
+            // check if threshold can be met with the remaining approvals
+            if !self.check_threshold_can_be_met(tx_id) {
+                Self::emit_event(
+                    Self::env(),
+                    Event::TransactionCancelled(TransactionCancelled { tx_id }),
+                );
+
+                // delete transaction
+                self.remove_tx(tx_id);
+            }
         }
 
         fn remove_tx(&mut self, tx_id: TxId) {
@@ -861,16 +840,5 @@ mod multisig {
         }
 
         Ok(())
-    }
-
-    fn handle_env_error(env_error: EnvError) -> WrappedEnvError {
-        match env_error {
-            EnvError::Decode(_) => WrappedEnvError::Decode,
-            EnvError::CalleeTrapped => WrappedEnvError::CalleeTrapped,
-            EnvError::CalleeReverted => WrappedEnvError::CalleeReverted,
-            EnvError::TransferFailed => WrappedEnvError::TransferFailed,
-            EnvError::NotCallable => WrappedEnvError::NotCallable,
-            _ => WrappedEnvError::Unexpected,
-        }
     }
 }
