@@ -20,16 +20,26 @@ build-docker-image:
 
 build-contract-release:   ## Build the contracts in release mode.
 	bash ./utils/build-core-contracts.sh --release
+
 build-contract-debug:   ## Build the contracts in debug mode.
 	bash ./utils/build-core-contracts.sh
+	
+type-generation:   ## Generate the types for the contracts.
+	bash ./utils/types-gen.sh
 
 node-download:    ## Download the substrate contracts node.
 	bash ./utils/download-node.sh
-	
-run:              ## Install dependencies, clean, build, and run tests.
-	yarn install
-	make clean
+
+compile-contracts:          ## Compile the contracts.
 	make build-docker-image
 	make build-contract-release
+	
+run-tests:              ## Install dependencies, download node and run tests.
+	yarn install
 	make node-download
+	make test
+
+build-and-test:
+	make build-contract-release
+	make type-generation
 	make test
