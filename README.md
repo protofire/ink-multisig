@@ -4,9 +4,9 @@
 
 Before running the project, make sure you have the following prerequisites installed on your system:
 
-- Rust Toolchain: You can install the Rust Toolchain by following the instructions [here](https://www.rust-lang.org/tools/install).
-- cargo-contract: Install `cargo-contract` by visiting the [GitHub repository](https://github.com/paritytech/cargo-contract) and following the installation instructions.
 - Node.js: Download Node.js from the official website [here](https://nodejs.org) and install it on your machine.
+- Docker: Download Docker from the official website [here](https://docs.docker.com/get-docker/) and install it on your machine.
+- Yarn: Download Yarn from the official website [here](https://classic.yarnpkg.com/en/docs/install) and install it on your machine.
 
 ## Getting Started
 
@@ -18,21 +18,19 @@ To quickly get started with the project, follow these instructions:
    $ cd ink-multisig
 ```
 
-2. Run the make command to build the project and run the tests:
+2. Run the make command to install the dependencies and run the tests:
 ```bash
-   $ make run
+   $ make run-tests
 ```
-The make run command will automatically install the necessary dependencies, clean the project, build the contracts, download the substrate contracts node, and run the tests.
 
 This command simplifies the setup process for the first time you run the project.
-
 Note: Make sure you have all the prerequisites installed before running the command.
 
 ## Additional Commands
-If you prefer to run the individual commands separately, here are the available options:
-- **make clean:** Clean the project by removing the generated files.
-- **make build:** Build the contracts and generate the artifacts.
-- **make node-download:** Download the substrate contracts node.
-- **make test:** Run the tests to verify the functionality of the smart contract.
+The contracts have already been compiled, and we provide the generated artifacts. If you prefer to compile them yourself, you can achieve this by executing the following command within our provided Docker compilation environment. By doing so, you will get identical artifacts to those we provided.
 
-Feel free to explore and use these commands based on your requirements.
+```bash
+   $ make compile-contracts
+```
+
+After that, you can check the generated artifacts in the target folder of each contract.
