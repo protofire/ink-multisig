@@ -80,7 +80,7 @@ mod multisig_factory {
             let multisig_ins = MultiSigRef::new(threshold, owners_list.clone())
                 .code_hash(self.multisig_codehash)
                 .endowment(0)
-                .salt_bytes(salt)
+                .salt_bytes(salt.clone())
                 .instantiate();
 
             match multisig_ins {
