@@ -308,34 +308,6 @@ mod multisig {
             })
         }
 
-        /// Constructor that creates a multisig contract with a single owner and a threshold of 1
-        /// The owner is the caller of the contract
-        /// The threshold is 1
-        /// The maximum number of owners is defined by MAX_OWNERS
-        /// The maximum number of transactions is defined by MAX_TRANSACTIONS
-        /// The transaction Id is a counter that starts at 0 and is incremented by 1 for each transaction
-        /// The transaction Id cannot overflow
-        #[ink(constructor)]
-        pub fn default() -> Result<Self, Error> {
-            let mut owners = Mapping::new();
-            let mut owners_list = Vec::new();
-            owners.insert(Self::env().caller(), &());
-            owners_list.push(Self::env().caller());
-
-            // sets the threshold to 1
-            Ok(Self {
-                owners_list,
-                owners,
-                threshold: 1,
-                next_tx_id: 0,
-                txs_id_list: Vec::new(),
-                txs: Mapping::new(),
-                approvals: Mapping::new(),
-                approvals_count: Mapping::new(),
-                rejections_count: Mapping::new(),
-            })
-        }
-
         /// Transaction proposal
         /// The parameters of the transaction are passed as a Transaction struct
         /// The caller of this function must be an owner
