@@ -34,7 +34,7 @@ after(() => {
   api.disconnect();
 });
 
-describe("Case 1", () => {
+describe("addOwnerFunction", () => {
   it("Should add a new owner", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
@@ -114,10 +114,8 @@ describe("Case 1", () => {
     expect(newOwners).to.include(charlieKeyringPair.address);
     expect(newOwners).to.include(daveKeyringPair.address);
   });
-});
 
-describe("Case 2", () => {
-  it("Should not add a new owner", async () => {
+  it("Should not add a new owner when rejections make the aproval imposible to met", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
 
