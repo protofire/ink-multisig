@@ -31,7 +31,7 @@ after(() => {
 });
 
 describe("Constructor tests", () => {
-  it("Should create a new multisig succesfully", async () => {
+  it("Alice should create a new multisig succesfully with her, Bob and Charlie", async () => {
     // Initial args
     const init_threshold = 2;
     const aliceKeyringPair = keyring.addFromUri("//Alice");
@@ -59,6 +59,38 @@ describe("Constructor tests", () => {
 
     const owners = (await multisig.query.getOwners()).value.unwrap();
     expect(owners).to.have.lengthOf(3);
+  });
+
+  it("Alice should create a new multisig succesfully with only Bob and Charlie", async () => {
+    // Initial args
+    const init_threshold = 2;
+    const aliceKeyringPair = keyring.addFromUri("//Alice");
+    const bobKeyringPair = keyring.addFromUri("//Bob");
+    const charlieKeyringPair = keyring.addFromUri("//Charlie");
+
+    // Create a new contract
+    const constructors = new Constructors(api, aliceKeyringPair);
+
+    const { address } = await constructors.new(init_threshold, [
+      bobKeyringPair.address,
+      charlieKeyringPair.address,
+    ]);
+
+    // Assert that the contract was created
+    expect(address).to.exist;
+
+    // Bind the contract to the new address
+    const multisig = new Contract(address, aliceKeyringPair, api);
+
+    // Assert that the contract has the correct values
+    const threshold = (await multisig.query.getThreshold()).value.unwrap();
+    expect(threshold).to.equal(2);
+
+    const owners = (await multisig.query.getOwners()).value.unwrap();
+    expect(owners).to.have.lengthOf(2);
+    expect(owners).to.include(bobKeyringPair.address);
+    expect(owners).to.include(charlieKeyringPair.address);
+    expect(owners).to.not.include(aliceKeyringPair.address);
   });
 
   it("Should error because threshold is greater than owners", async () => {
