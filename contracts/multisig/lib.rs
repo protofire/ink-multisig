@@ -14,7 +14,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
-pub use self::multisig::MultiSigRef;
+pub use self::multisig::{MultiSigRef, MultisigError};
 
 #[ink::contract]
 mod multisig {
@@ -172,13 +172,13 @@ mod multisig {
         /// Transaction executed successfully with the given result
         Success(Vec<u8>),
         /// Transaction failed with the given error
-        Failed(Error),
+        Failed(MultisigError),
     }
 
     /// Error types that can be returned by the contract
     #[derive(scale::Encode, scale::Decode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub enum Error {
+    pub enum MultisigError {
         /// Env error encountered when executing the transaction
         EnvExecutionFailed(String),
         /// Transaction executed but Lang error encountered
@@ -209,9 +209,9 @@ mod multisig {
         TransferFailed,
     }
 
-    impl From<EnvError> for Error {
+    impl From<EnvError> for MultisigError {
         fn from(e: EnvError) -> Self {
-            Error::EnvExecutionFailed(format!("{:?}", e))
+            MultisigError::EnvExecutionFailed(format!("{:?}", e))
         }
     }
 
@@ -281,7 +281,7 @@ mod multisig {
         /// The transaction Id is a counter that starts at 0 and is incremented by 1 for each transaction
         /// The transaction Id cannot overflow
         #[ink(constructor)]
-        pub fn new(threshold: u8, mut owners_list: Vec<AccountId>) -> Result<Self, Error> {
+        pub fn new(threshold: u8, mut owners_list: Vec<AccountId>) -> Result<Self, MultisigError> {
             // Remove duplicated owners
             owners_list.sort_unstable();
             owners_list.dedup();
@@ -317,18 +317,20 @@ mod multisig {
         /// The transaction is initialized with 1 approval and 0 rejections
         /// Emit TransactionProposed event
         #[ink(message)]
-        pub fn propose_tx(&mut self, tx: Transaction) -> Result<(), Error> {
+        pub fn propose_tx(&mut self, tx: Transaction) -> Result<(), MultisigError> {
             // Check that the caller is an owner
             self.ensure_is_owner(self.env().caller())?;
 
             // Check that the maximum number of transactions has not been reached
             if self.txs_id_list.len() as u8 == MAX_TRANSACTIONS {
-                return Err(Error::MaxTransactionsReached);
+                return Err(MultisigError::MaxTransactionsReached);
             }
 
             // Handle next_tx_id
             let current_tx_id = self.next_tx_id;
-            self.next_tx_id = current_tx_id.checked_add(1).ok_or(Error::TxIdOverflow)?;
+            self.next_tx_id = current_tx_id
+                .checked_add(1)
+                .ok_or(MultisigError::TxIdOverflow)?;
 
             // Store the transaction
             self.txs_id_list.push(current_tx_id);
@@ -370,7 +372,7 @@ mod multisig {
         /// Emit Approve event
         /// The transaction is executed if the threshold is met
         #[ink(message)]
-        pub fn approve_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn approve_tx(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.approve(tx_id)?;
@@ -396,7 +398,7 @@ mod multisig {
         /// Emit Reject event
         /// The transaction is removed if the threshold cannot be met with the remaining approvals
         #[ink(message)]
-        pub fn reject_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn reject_tx(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             // perform checks
             self.perform_approval_rejection_checking(tx_id)?;
             self.reject(tx_id)?;
@@ -418,7 +420,7 @@ mod multisig {
         /// The parameter of the transaction is the transaction Id
         /// The threshold must be met in order to execute the transaction
         #[ink(message)]
-        pub fn try_execute_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn try_execute_tx(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             self.is_tx_valid(tx_id)?;
             self._try_execute_tx(tx_id);
             Ok(())
@@ -429,7 +431,7 @@ mod multisig {
         /// The parameter of the transaction is the transaction Id
         /// The threshold must not be met in order to remove the transaction
         #[ink(message)]
-        pub fn try_remove_tx(&mut self, tx_id: TxId) -> Result<(), Error> {
+        pub fn try_remove_tx(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             self.is_tx_valid(tx_id)?;
             self._try_remove_tx(tx_id);
             Ok(())
@@ -445,18 +447,18 @@ mod multisig {
         /// The owner is added
         /// Emit OwnerAdded event
         #[ink(message)]
-        pub fn add_owner(&mut self, owner: AccountId) -> Result<(), Error> {
+        pub fn add_owner(&mut self, owner: AccountId) -> Result<(), MultisigError> {
             // Check that caller is multisig
             self.ensure_self_call()?;
 
             // Check that owners are not greater than MAX_OWNERS
             if self.owners_list.len() as u8 == MAX_OWNERS {
-                return Err(Error::MaxOwnersReached);
+                return Err(MultisigError::MaxOwnersReached);
             }
 
             // Check that owner is not already an owner
             if self.owners.contains(owner) {
-                return Err(Error::OwnerAlreadyExists);
+                return Err(MultisigError::OwnerAlreadyExists);
             }
 
             // Add the owner
@@ -478,7 +480,7 @@ mod multisig {
         /// The owner is removed
         /// Emit OwnerRemoved event
         #[ink(message)]
-        pub fn remove_owner(&mut self, owner: AccountId) -> Result<(), Error> {
+        pub fn remove_owner(&mut self, owner: AccountId) -> Result<(), MultisigError> {
             // Check that caller is multisig
             self.ensure_self_call()?;
 
@@ -489,12 +491,12 @@ mod multisig {
 
             // Check that owners are not empty after removing
             if owners_count == 1 {
-                return Err(Error::OwnersCantBeEmpty);
+                return Err(MultisigError::OwnersCantBeEmpty);
             }
 
             // Check that threshold is not greater than owners after removing
             if self.threshold > (owners_count - 1) as u8 {
-                return Err(Error::ThresholdGreaterThanOwners);
+                return Err(MultisigError::ThresholdGreaterThanOwners);
             }
 
             // Remove the owner
@@ -516,18 +518,18 @@ mod multisig {
         /// The threshold is changed
         /// Emit ThresholdChanged event
         #[ink(message)]
-        pub fn change_threshold(&mut self, threshold: u8) -> Result<(), Error> {
+        pub fn change_threshold(&mut self, threshold: u8) -> Result<(), MultisigError> {
             // Check that caller is multisig
             self.ensure_self_call()?;
 
             // Check that threshold is not greater than owners
             if threshold > self.owners_list.len() as u8 {
-                return Err(Error::ThresholdGreaterThanOwners);
+                return Err(MultisigError::ThresholdGreaterThanOwners);
             }
 
             // Check that threshold is not zero
             if threshold == 0 {
-                return Err(Error::ThresholdCantBeZero);
+                return Err(MultisigError::ThresholdCantBeZero);
             }
 
             // Change the threshold
@@ -548,7 +550,7 @@ mod multisig {
         /// The transfer is performed
         /// Emit Transfer event
         #[ink(message)]
-        pub fn transfer(&mut self, to: AccountId, value: Balance) -> Result<(), Error> {
+        pub fn transfer(&mut self, to: AccountId, value: Balance) -> Result<(), MultisigError> {
             // Check that caller is multisig
             self.ensure_self_call()?;
 
@@ -556,7 +558,7 @@ mod multisig {
             // Balance checks are being done inside the transfer function
             self.env()
                 .transfer(to, value)
-                .map_err(|_| Error::TransferFailed)?;
+                .map_err(|_| MultisigError::TransferFailed)?;
 
             // emit event
             Self::emit_event(Self::env(), Event::Transfer(Transfer { to, value }));
@@ -568,23 +570,23 @@ mod multisig {
         // Internal functions
         //-------------------------------------------------------
 
-        fn ensure_self_call(&self) -> Result<(), Error> {
+        fn ensure_self_call(&self) -> Result<(), MultisigError> {
             if self.env().caller() != self.env().account_id() {
-                return Err(Error::Unauthorized);
+                return Err(MultisigError::Unauthorized);
             }
             Ok(())
         }
 
-        fn ensure_is_owner(&self, owner: AccountId) -> Result<(), Error> {
+        fn ensure_is_owner(&self, owner: AccountId) -> Result<(), MultisigError> {
             self.owners
                 .contains(owner)
                 .then_some(())
-                .ok_or(Error::NotOwner)
+                .ok_or(MultisigError::NotOwner)
         }
 
-        fn ensure_not_already_voted(&self, tx_id: TxId) -> Result<(), Error> {
+        fn ensure_not_already_voted(&self, tx_id: TxId) -> Result<(), MultisigError> {
             if self.approvals.get((tx_id, self.env().caller())).is_some() {
-                return Err(Error::AlreadyVoted);
+                return Err(MultisigError::AlreadyVoted);
             }
             Ok(())
         }
@@ -603,7 +605,10 @@ mod multisig {
             rejections <= self.owners_list.len() as u8 - self.threshold
         }
 
-        fn perform_approval_rejection_checking(&mut self, tx_id: TxId) -> Result<(), Error> {
+        fn perform_approval_rejection_checking(
+            &mut self,
+            tx_id: TxId,
+        ) -> Result<(), MultisigError> {
             // Check that the caller is an owner
             self.ensure_is_owner(self.env().caller())?;
 
@@ -640,8 +645,8 @@ mod multisig {
             // Instead of just returning a custom Error we could return the error from the call
             let result = match tx_result {
                 Ok(Ok(bytes)) => TxResult::Success(bytes),
-                Ok(Err(e)) => TxResult::Failed(Error::LangExecutionFailed(e)),
-                Err(e) => TxResult::Failed(Error::from(e)),
+                Ok(Err(e)) => TxResult::Failed(MultisigError::LangExecutionFailed(e)),
+                Err(e) => TxResult::Failed(MultisigError::from(e)),
             };
 
             // We need to load the storage again because the call might have changed it.
@@ -700,7 +705,7 @@ mod multisig {
             );
         }
 
-        fn approve(&mut self, tx_id: TxId) -> Result<(), Error> {
+        fn approve(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             let approvals = self
                 .approvals_count
                 .get(tx_id)
@@ -710,7 +715,7 @@ mod multisig {
             Ok(())
         }
 
-        fn reject(&mut self, tx_id: TxId) -> Result<(), Error> {
+        fn reject(&mut self, tx_id: TxId) -> Result<(), MultisigError> {
             let rejections = self
                 .rejections_count
                 .get(tx_id)
@@ -789,11 +794,11 @@ mod multisig {
         /// The parameter of the transaction is the transaction id
         /// Returns a result with () if the transaction id is valid or an Error if it is not valid
         #[ink(message)]
-        pub fn is_tx_valid(&self, tx_id: TxId) -> Result<(), Error> {
+        pub fn is_tx_valid(&self, tx_id: TxId) -> Result<(), MultisigError> {
             self.txs
                 .contains(tx_id)
                 .then_some(())
-                .ok_or(Error::InvalidTxId)
+                .ok_or(MultisigError::InvalidTxId)
         }
 
         /// Get Transaction Approvals
@@ -823,20 +828,23 @@ mod multisig {
 
     // Ensure the params of the constructor are valid
     // according to the rules of the contract
-    fn ensure_creation_params(threshold: u8, owners_list: &Vec<AccountId>) -> Result<(), Error> {
+    fn ensure_creation_params(
+        threshold: u8,
+        owners_list: &Vec<AccountId>,
+    ) -> Result<(), MultisigError> {
         // Check that owners are not empty
         if owners_list.is_empty() {
-            return Err(Error::OwnersCantBeEmpty);
+            return Err(MultisigError::OwnersCantBeEmpty);
         }
 
         // Check that threshold is not greater than owners
         if threshold > owners_list.len() as u8 {
-            return Err(Error::ThresholdGreaterThanOwners);
+            return Err(MultisigError::ThresholdGreaterThanOwners);
         }
 
         // Check that threshold is not zero
         if threshold == 0 {
-            return Err(Error::ThresholdCantBeZero);
+            return Err(MultisigError::ThresholdCantBeZero);
         }
 
         Ok(())

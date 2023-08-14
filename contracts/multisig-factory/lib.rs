@@ -21,7 +21,7 @@ mod multisig_factory {
     use ink::codegen::EmitEvent;
     use ink::prelude::vec::Vec;
     use ink::ToAccountId;
-    use multisig::MultiSigRef;
+    use multisig::{MultiSigRef, MultisigError};
 
     /// The type encapsulating the events emitted by this contract.
     type Event = <MultiSigFactory as ink::reflect::ContractEventBase>::Type;
@@ -40,14 +40,6 @@ mod multisig_factory {
         salt: Vec<u8>,
     }
 
-    /// Error type for the MultiSigFactory contract.
-    #[derive(scale::Encode, scale::Decode)]
-    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
-    pub enum Error {
-        /// The contract instantiation has failed.
-        InstantiationFailed,
-    }
-
     /// The MultiSigFactory struct to store the codehash of the MultiSig
     #[ink(storage)]
     #[derive(Default)]
@@ -59,7 +51,7 @@ mod multisig_factory {
     impl MultiSigFactory {
         /// Constructor that stores the codehash of the MultiSig contract.
         #[ink(constructor)]
-        pub fn new(codehash: Hash) -> Result<Self, Error> {
+        pub fn new(codehash: Hash) -> Result<Self, ()> {
             Ok(Self {
                 multisig_codehash: codehash,
             })
@@ -76,28 +68,40 @@ mod multisig_factory {
             threshold: u8,
             owners_list: Vec<AccountId>,
             salt: Vec<u8>,
-        ) -> Result<(), Error> {
-            let multisig_ins = MultiSigRef::new(threshold, owners_list.clone())
+        ) -> Result<(), MultisigError> {
+            // Try to instantiate a new MultiSig contract.
+            let instantiation_result = MultiSigRef::new(threshold, owners_list.clone())
                 .code_hash(self.multisig_codehash)
                 .endowment(0)
                 .salt_bytes(salt.clone())
-                .instantiate();
+                .try_instantiate();
 
-            match multisig_ins {
-                Ok(multisig) => {
-                    let multisig_address = multisig.to_account_id();
-                    Self::emit_event(
-                        Self::env(),
-                        Event::NewMultisig(NewMultisig {
-                            multisig_address,
-                            threshold,
-                            owners_list,
-                            salt,
-                        }),
-                    );
-                    Ok(())
-                }
-                Err(_) => Err(Error::InstantiationFailed),
+            match instantiation_result {
+                // If env errors
+                Err(e) => Err(MultisigError::from(e)),
+
+                // If lang errors
+                Ok(Err(e)) => Err(MultisigError::LangExecutionFailed(e)),
+
+                // Check instantiation result
+                Ok(Ok(a)) => match a {
+                    // Success
+                    Ok(multisig) => {
+                        let multisig_address = multisig.to_account_id();
+                        Self::emit_event(
+                            Self::env(),
+                            Event::NewMultisig(NewMultisig {
+                                multisig_address,
+                                threshold,
+                                owners_list,
+                                salt,
+                            }),
+                        );
+                        Ok(())
+                    }
+                    // Error
+                    Err(e) => Err(e),
+                },
             }
         }
 

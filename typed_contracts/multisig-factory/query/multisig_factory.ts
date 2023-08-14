@@ -35,15 +35,15 @@ export default class Methods {
 	* @param { (number | string | BN) } threshold,
 	* @param { Array<ArgumentTypes.AccountId> } ownersList,
 	* @param { Array<(number | string | BN)> } salt,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"newMultisig" (
 		threshold: (number | string | BN),
 		ownersList: Array<ArgumentTypes.AccountId>,
 		salt: Array<(number | string | BN)>,
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
-		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "newMultisig", [threshold, ownersList, salt], __options , (result) => { return handleReturnType(result, getTypeDescription(3, DATA_TYPE_DESCRIPTIONS)); });
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
+		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "newMultisig", [threshold, ownersList, salt], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
 }

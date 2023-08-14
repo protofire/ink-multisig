@@ -3,7 +3,7 @@ import type {ReturnNumber} from '@727-ventures/typechain-types';
 
 export type AccountId = string | number[]
 
-export interface Error {
+export interface MultisigError {
 	envExecutionFailed ? : string,
 	langExecutionFailed ? : LangError,
 	ownersCantBeEmpty ? : null,
@@ -20,73 +20,73 @@ export interface Error {
 	transferFailed ? : null
 }
 
-export class ErrorBuilder {
-	static EnvExecutionFailed(value: string): Error {
+export class MultisigErrorBuilder {
+	static EnvExecutionFailed(value: string): MultisigError {
 		return {
 			envExecutionFailed: value,
 		};
 	}
-	static LangExecutionFailed(value: LangError): Error {
+	static LangExecutionFailed(value: LangError): MultisigError {
 		return {
 			langExecutionFailed: value,
 		};
 	}
-	static OwnersCantBeEmpty(): Error {
+	static OwnersCantBeEmpty(): MultisigError {
 		return {
 			ownersCantBeEmpty: null,
 		};
 	}
-	static ThresholdGreaterThanOwners(): Error {
+	static ThresholdGreaterThanOwners(): MultisigError {
 		return {
 			thresholdGreaterThanOwners: null,
 		};
 	}
-	static ThresholdCantBeZero(): Error {
+	static ThresholdCantBeZero(): MultisigError {
 		return {
 			thresholdCantBeZero: null,
 		};
 	}
-	static Unauthorized(): Error {
+	static Unauthorized(): MultisigError {
 		return {
 			unauthorized: null,
 		};
 	}
-	static MaxOwnersReached(): Error {
+	static MaxOwnersReached(): MultisigError {
 		return {
 			maxOwnersReached: null,
 		};
 	}
-	static OwnerAlreadyExists(): Error {
+	static OwnerAlreadyExists(): MultisigError {
 		return {
 			ownerAlreadyExists: null,
 		};
 	}
-	static NotOwner(): Error {
+	static NotOwner(): MultisigError {
 		return {
 			notOwner: null,
 		};
 	}
-	static MaxTransactionsReached(): Error {
+	static MaxTransactionsReached(): MultisigError {
 		return {
 			maxTransactionsReached: null,
 		};
 	}
-	static TxIdOverflow(): Error {
+	static TxIdOverflow(): MultisigError {
 		return {
 			txIdOverflow: null,
 		};
 	}
-	static AlreadyVoted(): Error {
+	static AlreadyVoted(): MultisigError {
 		return {
 			alreadyVoted: null,
 		};
 	}
-	static InvalidTxId(): Error {
+	static InvalidTxId(): MultisigError {
 		return {
 			invalidTxId: null,
 		};
 	}
-	static TransferFailed(): Error {
+	static TransferFailed(): MultisigError {
 		return {
 			transferFailed: null,
 		};
@@ -108,7 +108,7 @@ export type Transaction = {
 
 export interface TxResult {
 	success ? : Array<number>,
-	failed ? : Error
+	failed ? : MultisigError
 }
 
 export class TxResultBuilder {
@@ -117,7 +117,7 @@ export class TxResultBuilder {
 			success: value,
 		};
 	}
-	static Failed(value: Error): TxResult {
+	static Failed(value: MultisigError): TxResult {
 		return {
 			failed: value,
 		};
