@@ -1,5 +1,5 @@
 {
-  "name": "@xsigners/sdk",
+  "name": "xsigners-sdk",
   "version": "0.1.0",
   "description": "SDK to interact with xsigners contracts",
   "main": "./dist/index.js",
