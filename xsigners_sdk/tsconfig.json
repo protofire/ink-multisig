@@ -8,12 +8,15 @@
       "forceConsistentCasingInFileNames": true,
       "declaration": true,
       "outDir": "./dist",
-      "rootDir": "../",
-      "baseUrl": "./",
+      "baseUrl": "../",
       "paths": {
         "@/*": [
-          "./src/*"
+          "xsigners_sdk/src/*"
+        ],
+        "@typed_contracts/*": [
+          "typed_contracts/*"
         ]
+
       },
     },
     "include": ["src/**/*.ts"],

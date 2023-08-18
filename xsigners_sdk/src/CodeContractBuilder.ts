@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { ContractPromise } from '@polkadot/api-contract';
-import { ContractAbi } from '../../typed_contracts/multisig-factory/contract-info/multisig_factory';
-import {ALL_CHAINS, isValidChain, CHAIN_CONTRACTS_ADDRESS} from "@/constants/index"
+import { ContractAbi } from '@typed_contracts/multisig-factory/contract-info/multisig_factory';
+import {ALL_CHAINS, isValidChain, CHAIN_CONTRACTS_ADDRESS} from "./constants"
 
 export class ContractPromiseBuilder {
   private nativeAPI: ApiPromise;
