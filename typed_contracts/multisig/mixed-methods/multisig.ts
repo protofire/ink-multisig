@@ -248,12 +248,12 @@ export default class Methods {
 	* isTxValid
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"isTxValid" (
 		txId: (string | number | BN),
 		__options: GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "isTxValid", [txId], __options, (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 

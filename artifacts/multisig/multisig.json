@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0xb4c3f5506d99f82e358845e865a5235cc26770e38b3c4d89ff65309c7bd69745",
+    "hash": "0x928c62eb71af918e760c538669a2577216a971a611aa5f78f062210e2a3a07a7",
     "language": "ink! 4.2.0",
     "compiler": "rustc 1.69.0-nightly",
     "build_info": {
@@ -1487,7 +1487,7 @@
         "path": [
           "multisig",
           "multisig",
-          "Error"
+          "MultisigError"
         ]
       }
     },
@@ -2030,7 +2030,7 @@
                 "fields": [
                   {
                     "type": 12,
-                    "typeName": "Error"
+                    "typeName": "MultisigError"
                   }
                 ],
                 "index": 1,

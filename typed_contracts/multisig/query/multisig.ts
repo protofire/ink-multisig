@@ -33,12 +33,12 @@ export default class Methods {
 	* proposeTx
 	*
 	* @param { ArgumentTypes.Transaction } tx,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"proposeTx" (
 		tx: ArgumentTypes.Transaction,
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "proposeTx", [tx], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -46,12 +46,12 @@ export default class Methods {
 	* approveTx
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"approveTx" (
 		txId: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "approveTx", [txId], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -59,12 +59,12 @@ export default class Methods {
 	* rejectTx
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"rejectTx" (
 		txId: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "rejectTx", [txId], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -72,12 +72,12 @@ export default class Methods {
 	* tryExecuteTx
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"tryExecuteTx" (
 		txId: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "tryExecuteTx", [txId], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -85,12 +85,12 @@ export default class Methods {
 	* tryRemoveTx
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"tryRemoveTx" (
 		txId: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "tryRemoveTx", [txId], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -98,12 +98,12 @@ export default class Methods {
 	* addOwner
 	*
 	* @param { ArgumentTypes.AccountId } owner,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"addOwner" (
 		owner: ArgumentTypes.AccountId,
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "addOwner", [owner], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -111,12 +111,12 @@ export default class Methods {
 	* removeOwner
 	*
 	* @param { ArgumentTypes.AccountId } owner,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"removeOwner" (
 		owner: ArgumentTypes.AccountId,
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "removeOwner", [owner], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -124,12 +124,12 @@ export default class Methods {
 	* changeThreshold
 	*
 	* @param { (number | string | BN) } threshold,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"changeThreshold" (
 		threshold: (number | string | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "changeThreshold", [threshold], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -138,13 +138,13 @@ export default class Methods {
 	*
 	* @param { ArgumentTypes.AccountId } to,
 	* @param { (string | number | BN) } value,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"transfer" (
 		to: ArgumentTypes.AccountId,
 		value: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "transfer", [to, value], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 
@@ -222,12 +222,12 @@ export default class Methods {
 	* isTxValid
 	*
 	* @param { (string | number | BN) } txId,
-	* @returns { Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> }
+	* @returns { Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> }
 	*/
 	"isTxValid" (
 		txId: (string | number | BN),
 		__options ? : GasLimit,
-	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.Error>, ReturnTypes.LangError> > >{
+	): Promise< QueryReturnType< Result<Result<null, ReturnTypes.MultisigError>, ReturnTypes.LangError> > >{
 		return queryOkJSON( this.__apiPromise, this.__nativeContract, this.__callerAddress, "isTxValid", [txId], __options , (result) => { return handleReturnType(result, getTypeDescription(10, DATA_TYPE_DESCRIPTIONS)); });
 	}
 

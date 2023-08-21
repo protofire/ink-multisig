@@ -150,7 +150,7 @@ describe("Transfer function", () => {
     // Before executing the transaction, we will subscribe to the Executed event
     // in order to check that the transaction has failed
     multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      console.log('Transaction executed event received:', event);
+      //console.log('Transaction executed event received:', event);
       transferEvent = event;
     });
 
