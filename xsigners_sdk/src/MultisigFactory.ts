@@ -3,14 +3,14 @@ import { ContractPromise } from '@polkadot/api-contract';
 import { ContractAbi } from '@typed_contracts/multisig-factory/contract-info/multisig_factory';
 import {ALL_CHAINS, isValidChain, CHAIN_CONTRACTS_ADDRESS} from "./constants"
 
-export class ContractPromiseBuilder {
+export class MultisigFactory {
   private nativeAPI: ApiPromise;
 
   constructor(nativeAPI: ApiPromise) {
     this.nativeAPI = nativeAPI;
   }
 
-  createContract(chainId: ALL_CHAINS): ContractPromise {
+  buildContractPromise(chainId: ALL_CHAINS): ContractPromise {
     if (!isValidChain(chainId))
         throw new Error(`Unsupported chainId: ${chainId}`);
       

@@ -1,2 +1,2 @@
-export * from './CodeContractBuilder'
+export * from './MultisigFactory'
 export * from './constants'
