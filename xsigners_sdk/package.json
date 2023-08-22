@@ -1,6 +1,6 @@
 {
-  "name": "xsigners-sdk",
-  "version": "0.0.1",
+  "name": "xsigners-sdk-test",
+  "version": "0.0.5",
   "description": "SDK to interact with xsigners contracts",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,9 +12,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
+  "dependencies": {
+    "@727-ventures/typechain-types": "^1.1.2",
     "@polkadot/api": "^10.7.2",
     "@polkadot/api-contract": "^10.9.1",
+    "bn.js": "^5.2.1"
+  },
+  "devDependencies": {
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^20.5.0",
