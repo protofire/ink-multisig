@@ -19,8 +19,8 @@ jobs:
         git config user.email "action@github.com"
         
         git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/xsigners-sdk.git xsigners_sdk 
-        cp -r typed_contracts/* xsigners_sdk/src/typed_contracts/
-        cp -r constants/* xsigners_sdk/src/constants/
+        cp -r typed_contracts xsigners_sdk/src/
+        cp -r constants xsigners_sdk/src/
         
         cd xsigners_sdk 
         git add .
