@@ -18,11 +18,11 @@ jobs:
         git config user.name "GitHub Action"
         git config user.email "action@github.com"
         
-        git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/test-sdk.git test-sdk 
-        cp -r typed_contracts/* test-sdk/src/typed_contracts/
-        cp -r constants/* test-sdk/src/constants/
+        git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/xsigners-sdk.git xsigners_sdk 
+        cp -r typed_contracts/* xsigners_sdk/src/typed_contracts/
+        cp -r constants/* xsigners_sdk/src/constants/
         
-        cd test-sdk 
+        cd xsigners_sdk 
         git add .
         git commit -m "Sync from source repo"
         git push
