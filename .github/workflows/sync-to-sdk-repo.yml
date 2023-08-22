@@ -15,8 +15,8 @@ jobs:
 
     - name: Push to destination repo
       run: |
-        git config user.name "GitHub Action"
-        git config user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
         
         git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/xsigners-sdk.git xsigners_sdk 
         cp -r typed_contracts xsigners_sdk/src/
