@@ -1,4 +1,4 @@
-name: Sync to SDK Repo
+name: Sync to SDK Repository
 
 on:
   push:
