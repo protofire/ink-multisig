@@ -9,4 +9,3 @@ export const CHAIN_CONTRACTS_ADDRESS: Record<ALL_CHAINS, string> = {
 export function isValidChain(key: string): key is ALL_CHAINS {
     return CHAINS.includes(key)
 }
-// T3
