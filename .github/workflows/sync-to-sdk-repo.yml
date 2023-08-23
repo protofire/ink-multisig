@@ -4,7 +4,6 @@ on:
   push:
     paths:
     - 'typed_contracts/**'
-    - 'constants/**'
 
 jobs:
   sync:
@@ -18,13 +17,12 @@ jobs:
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
         
-        git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/xsigners-sdk.git xsigners_sdk 
+        git clone https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git xsigners_sdk 
         cp -r typed_contracts xsigners_sdk/src/
-        cp -r constants xsigners_sdk/src/
         
         cd xsigners_sdk 
-        git remote set-url origin https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/henrypalacios/xsigners-sdk.git
+        git remote set-url origin https://${{ secrets.REPO_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git
         git add .
-        git commit -m "Sync from source repo"
+        git commit -m "Sync from contracts source repo"
         git push
 
