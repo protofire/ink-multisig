@@ -39,17 +39,17 @@ after(() => {
   api.disconnect();
 });
 
-const assignKeyringPairs = async () => {
-  aliceKeyringPair = await keyring.addFromUri("//Alice");
-  bobKeyringPair = await keyring.addFromUri("//Bob");
-  charlieKeyringPair = await keyring.addFromUri("//Charlie");
-  daveKeyringPair = await keyring.addFromUri("//Dave");
+const assignKeyringPairs = () => {
+  aliceKeyringPair = keyring.addFromUri("//Alice");
+  bobKeyringPair = keyring.addFromUri("//Bob");
+  charlieKeyringPair = keyring.addFromUri("//Charlie");
+  daveKeyringPair = keyring.addFromUri("//Dave");
 };
 
 describe.only("addOwnerFunction", () => {
   before(async () => {
     // call function to create keyring pairs
-    await assignKeyringPairs();
+    assignKeyringPairs();
   });
 
   it("Should add a new owner", async () => {
