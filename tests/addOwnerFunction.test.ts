@@ -47,6 +47,29 @@ const assignKeyringPairs = () => {
   daveKeyringPair = keyring.addFromUri("//Dave");
 };
 
+const createABCMultiSigAndEnsureState = async () => {
+  // Create a new contract
+  const constructors = new Constructors(api, aliceKeyringPair);
+
+  const { address } = await constructors.new(init_threshold, [
+    aliceKeyringPair.address,
+    bobKeyringPair.address,
+    charlieKeyringPair.address,
+  ]);
+  expect(address).to.exist;
+
+  // Bind the contract to the new address
+  const multisig = new Contract(address, aliceKeyringPair, api);
+
+  // Check the initial state
+  const threshold = (await multisig.query.getThreshold()).value.unwrap();
+  expect(threshold).to.equal(2);
+  const owners = (await multisig.query.getOwners()).value.unwrap();
+  expect(owners).to.have.lengthOf(3);
+
+  return [address, multisig];
+};
+
 describe.only("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
@@ -57,24 +80,7 @@ describe.only("addOwnerFunction", () => {
 
   it("Should add a new owner", async () => {
     // Create a new contract
-    const constructors = new Constructors(api, aliceKeyringPair);
-
-    const { address } = await constructors.new(init_threshold, [
-      aliceKeyringPair.address,
-      bobKeyringPair.address,
-      charlieKeyringPair.address,
-    ]);
-    expect(address).to.exist;
-
-    // Bind the contract to the new address
-    const multisig = new Contract(address, aliceKeyringPair, api);
-
-    // Check the initial state
-    const threshold = (await multisig.query.getThreshold()).value.unwrap();
-    expect(threshold).to.equal(2);
-
-    const owners = (await multisig.query.getOwners()).value.unwrap();
-    expect(owners).to.have.lengthOf(3);
+    const [address, multisig] = await createABCMultiSigAndEnsureState();
 
     // Get the arguments for the proposeTx contract call
 
@@ -138,24 +144,7 @@ describe.only("addOwnerFunction", () => {
 
   it("Should not add a repeated owner", async () => {
     // Create a new contract
-    const constructors = new Constructors(api, aliceKeyringPair);
-
-    const { address } = await constructors.new(init_threshold, [
-      aliceKeyringPair.address,
-      bobKeyringPair.address,
-      charlieKeyringPair.address,
-    ]);
-    expect(address).to.exist;
-
-    // Bind the contract to the new address
-    const multisig = new Contract(address, aliceKeyringPair, api);
-
-    // Check the initial state
-    const threshold = (await multisig.query.getThreshold()).value.unwrap();
-    expect(threshold).to.equal(2);
-
-    const owners = (await multisig.query.getOwners()).value.unwrap();
-    expect(owners).to.have.lengthOf(3);
+    const [address, multisig] = await createABCMultiSigAndEnsureState();
 
     // Get the arguments for the proposeTx contract call
 
@@ -221,24 +210,7 @@ describe.only("addOwnerFunction", () => {
 
   it("Should not add a new owner when rejections make the aproval imposible to met", async () => {
     // Create a new contract
-    const constructors = new Constructors(api, aliceKeyringPair);
-
-    const { address } = await constructors.new(init_threshold, [
-      aliceKeyringPair.address,
-      bobKeyringPair.address,
-      charlieKeyringPair.address,
-    ]);
-    expect(address).to.exist;
-
-    // Bind the contract to the new address
-    const multisig = new Contract(address, aliceKeyringPair, api);
-
-    // Check the initial state
-    const threshold = (await multisig.query.getThreshold()).value.unwrap();
-    expect(threshold).to.equal(2);
-
-    const owners = (await multisig.query.getOwners()).value.unwrap();
-    expect(owners).to.have.lengthOf(3);
+    const [address, multisig] = await createABCMultiSigAndEnsureState();
 
     // Get the arguments for the proposeTx contract call
 
