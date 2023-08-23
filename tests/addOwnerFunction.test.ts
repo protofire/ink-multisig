@@ -13,6 +13,7 @@ let aliceKeyringPair;
 let bobKeyringPair;
 let charlieKeyringPair;
 let daveKeyringPair;
+let multisigMessageIndex;
 let init_threshold = 2;
 
 before(async () => {
@@ -50,12 +51,11 @@ describe.only("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
     assignKeyringPairs();
+    // Index that allows to get the selector of a message by its label
+    multisigMessageIndex = new MessageIndex(ContractAbi);
   });
 
   it("Should add a new owner", async () => {
-    // Index that allows to get the selector of a message by its label
-    const multisigMessageIndex = new MessageIndex(ContractAbi);
-
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
 
@@ -137,9 +137,6 @@ describe.only("addOwnerFunction", () => {
   });
 
   it("Should not add a repeated owner", async () => {
-    // Index that allows to get the selector of a message by its label
-    const multisigMessageIndex = new MessageIndex(ContractAbi);
-
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
 
@@ -223,9 +220,6 @@ describe.only("addOwnerFunction", () => {
   });
 
   it("Should not add a new owner when rejections make the aproval imposible to met", async () => {
-    // Index that allows to get the selector of a message by its label
-    const multisigMessageIndex = new MessageIndex(ContractAbi);
-
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
 
