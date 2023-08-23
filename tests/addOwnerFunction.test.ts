@@ -9,6 +9,11 @@ import { hex_to_bytes } from "./utils/convertions";
 
 let api;
 let keyring;
+let aliceKeyringPair;
+let bobKeyringPair;
+let charlieKeyringPair;
+let daveKeyringPair;
+let init_threshold = 2;
 
 before(async () => {
   try {
@@ -34,17 +39,22 @@ after(() => {
   api.disconnect();
 });
 
-describe("addOwnerFunction", () => {
+const assignKeyringPairs = async () => {
+  aliceKeyringPair = await keyring.addFromUri("//Alice");
+  bobKeyringPair = await keyring.addFromUri("//Bob");
+  charlieKeyringPair = await keyring.addFromUri("//Charlie");
+  daveKeyringPair = await keyring.addFromUri("//Dave");
+};
+
+describe.only("addOwnerFunction", () => {
+  before(async () => {
+    // call function to create keyring pairs
+    await assignKeyringPairs();
+  });
+
   it("Should add a new owner", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
-
-    // Initial args
-    const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
-    const charlieKeyringPair = keyring.addFromUri("//Charlie");
-    const daveKeyringPair = keyring.addFromUri("//Dave");
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -69,7 +79,8 @@ describe("addOwnerFunction", () => {
     // Get the arguments for the proposeTx contract call
 
     // Get the selector of the add_owner message
-    const selector = multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
+    const selector =
+      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
 
     // Create the argument for the add_owner message in the specified format
     const arg = api.createType("AccountId", daveKeyringPair.address);
@@ -103,13 +114,13 @@ describe("addOwnerFunction", () => {
     multisig.events.subscribeOnTransactionExecutedEvent((event) => {
       newTxExecutedEvent = event;
     });
-    
+
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
-    
+
     // Emit the success in the event result
     expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("success")
+    expect(Object.keys(newTxExecutedEvent.result)).to.include("success");
 
     // Check the state after the execution of the transaction
     // Because the threshold is 2, the transaction is executed automatically and removed
@@ -128,12 +139,6 @@ describe("addOwnerFunction", () => {
   it("Should not add a repeated owner", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
-
-    // Initial args
-    const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
-    const charlieKeyringPair = keyring.addFromUri("//Charlie");
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -158,7 +163,8 @@ describe("addOwnerFunction", () => {
     // Get the arguments for the proposeTx contract call
 
     // Get the selector of the add_owner message
-    const selector = multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
+    const selector =
+      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
 
     // Create the argument for the add_owner message in the specified format
     const arg = api.createType("AccountId", bobKeyringPair.address);
@@ -198,8 +204,10 @@ describe("addOwnerFunction", () => {
 
     // Emit the error in the event
     expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed")
-    expect(Object.keys(newTxExecutedEvent.result.failed)).to.include("envExecutionFailed")
+    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
+    expect(Object.keys(newTxExecutedEvent.result.failed)).to.include(
+      "envExecutionFailed"
+    );
 
     // Check the state after the execution of the transaction
     // Because the threshold is 2, the transaction is executed automatically and removed
@@ -217,13 +225,6 @@ describe("addOwnerFunction", () => {
   it("Should not add a new owner when rejections make the aproval imposible to met", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
-
-    // Initial args
-    const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
-    const charlieKeyringPair = keyring.addFromUri("//Charlie");
-    const daveKeyringPair = keyring.addFromUri("//Dave");
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -248,7 +249,8 @@ describe("addOwnerFunction", () => {
     // Get the arguments for the proposeTx contract call
 
     // Get the selector of the add_owner message
-    const selector = multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
+    const selector =
+      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
 
     // Create the argument for the add_owner message in the specified format
     const arg = api.createType("AccountId", daveKeyringPair.address);
