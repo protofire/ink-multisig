@@ -70,6 +70,27 @@ const createABCMultiSigAndEnsureState = async () => {
   return [address, multisig];
 };
 
+const buildTransaction = (address, addressToAdd) => {
+  // Get the selector of the add_owner message
+  const selector =
+    multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
+
+  // Create the argument for the add_owner message in the specified format
+  const arg = api.createType("AccountId", addressToAdd);
+  const arg_hex = arg.toHex();
+
+  const addOwnerTx: Transaction = {
+    address: address,
+    selector: selector!,
+    input: hex_to_bytes(arg_hex),
+    transferredValue: 0,
+    gasLimit: 100000000000,
+    allowReentry: true,
+  };
+
+  return addOwnerTx;
+};
+
 describe.only("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
@@ -82,24 +103,7 @@ describe.only("addOwnerFunction", () => {
     // Create a new contract
     const [address, multisig] = await createABCMultiSigAndEnsureState();
 
-    // Get the arguments for the proposeTx contract call
-
-    // Get the selector of the add_owner message
-    const selector =
-      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
-
-    // Create the argument for the add_owner message in the specified format
-    const arg = api.createType("AccountId", daveKeyringPair.address);
-    const arg_hex = arg.toHex();
-
-    const addOwnerTx: Transaction = {
-      address: address,
-      selector: selector!,
-      input: hex_to_bytes(arg_hex),
-      transferredValue: 0,
-      gasLimit: 100000000000,
-      allowReentry: true,
-    };
+    const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
     // Propose the transaction on chain
     await multisig.tx.proposeTx(addOwnerTx);
@@ -146,24 +150,7 @@ describe.only("addOwnerFunction", () => {
     // Create a new contract
     const [address, multisig] = await createABCMultiSigAndEnsureState();
 
-    // Get the arguments for the proposeTx contract call
-
-    // Get the selector of the add_owner message
-    const selector =
-      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
-
-    // Create the argument for the add_owner message in the specified format
-    const arg = api.createType("AccountId", bobKeyringPair.address);
-    const arg_hex = arg.toHex();
-
-    const addOwnerTx: Transaction = {
-      address: address,
-      selector: selector!,
-      input: hex_to_bytes(arg_hex),
-      transferredValue: 0,
-      gasLimit: 100000000000,
-      allowReentry: true,
-    };
+    const addOwnerTx = buildTransaction(address, bobKeyringPair.address);
 
     // Propose the transaction on chain
     await multisig.tx.proposeTx(addOwnerTx);
@@ -212,24 +199,7 @@ describe.only("addOwnerFunction", () => {
     // Create a new contract
     const [address, multisig] = await createABCMultiSigAndEnsureState();
 
-    // Get the arguments for the proposeTx contract call
-
-    // Get the selector of the add_owner message
-    const selector =
-      multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
-
-    // Create the argument for the add_owner message in the specified format
-    const arg = api.createType("AccountId", daveKeyringPair.address);
-    const arg_hex = arg.toHex();
-
-    const addOwnerTx: Transaction = {
-      address: address,
-      selector: selector!,
-      input: hex_to_bytes(arg_hex),
-      transferredValue: 0,
-      gasLimit: 100000000000,
-      allowReentry: true,
-    };
+    const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
     // Propose the transaction on chain
     await multisig.tx.proposeTx(addOwnerTx);
