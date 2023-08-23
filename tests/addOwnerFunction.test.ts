@@ -47,7 +47,7 @@ const assignKeyringPairs = () => {
 };
 
 describe.only("addOwnerFunction", () => {
-  before(async () => {
+  before(() => {
     // call function to create keyring pairs
     assignKeyringPairs();
   });
