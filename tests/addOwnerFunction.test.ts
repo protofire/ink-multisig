@@ -91,6 +91,22 @@ const buildTransaction = (address, addressToAdd) => {
   return addOwnerTx;
 };
 
+const proposeTransaction = async (multisig, addOwnerTx) => {
+  // Propose the transaction on chain
+  await multisig.tx.proposeTx(addOwnerTx);
+
+  // Check the state after the proposeTx call
+  let tx = await multisig.query.getTx(0);
+  expect(tx).to.exist;
+
+  // The proposed transaction has 1 approval and 0 rejections
+  const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
+  expect(approvals).to.equal(1);
+
+  const rejections = (await multisig.query.getTxRejections(0)).value.ok;
+  expect(rejections).to.equal(0);
+};
+
 describe.only("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
@@ -106,18 +122,7 @@ describe.only("addOwnerFunction", () => {
     const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
     // Propose the transaction on chain
-    await multisig.tx.proposeTx(addOwnerTx);
-
-    // Check the state after the proposeTx call
-    let tx = await multisig.query.getTx(0);
-    expect(tx).to.exist;
-
-    // The proposed transaction has 1 approval and 0 rejections
-    const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-    expect(approvals).to.equal(1);
-
-    const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-    expect(rejections).to.equal(0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -153,18 +158,7 @@ describe.only("addOwnerFunction", () => {
     const addOwnerTx = buildTransaction(address, bobKeyringPair.address);
 
     // Propose the transaction on chain
-    await multisig.tx.proposeTx(addOwnerTx);
-
-    // Check the state after the proposeTx call
-    let tx = await multisig.query.getTx(0);
-    expect(tx).to.exist;
-
-    // The proposed transaction has 1 approval and 0 rejections
-    const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-    expect(approvals).to.equal(1);
-
-    const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-    expect(rejections).to.equal(0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -202,22 +196,17 @@ describe.only("addOwnerFunction", () => {
     const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
     // Propose the transaction on chain
-    await multisig.tx.proposeTx(addOwnerTx);
+    await proposeTransaction(multisig, addOwnerTx);
 
-    // Check the state after the proposeTx call
-    let tx = await multisig.query.getTx(0);
-    expect(tx).to.exist;
+    // Reject the transaction by Bob
+    await multisig.withSigner(bobKeyringPair).tx.rejectTx(0);
 
-    // The proposed transaction has 1 approval and 0 rejections
+    // The proposed transaction has 1 approval and 1 rejections
     const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
     expect(approvals).to.equal(1);
 
     const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-    expect(rejections).to.equal(0);
-
-    // Reject the transaction by Bob
-    await multisig.withSigner(bobKeyringPair).tx.rejectTx(0);
-    //TODO: check approvals and rejections
+    expect(rejections).to.equal(1);
 
     // Reject the transaction by Charlie
     await multisig.withSigner(charlieKeyringPair).tx.rejectTx(0);
