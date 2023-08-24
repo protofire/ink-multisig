@@ -44,7 +44,9 @@ describe("Transfer function", () => {
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
-    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address]);
+    const { address: multisigAddress } = await constructors.new(1, [
+      aliceKeyringPair.address,
+    ]);
     expect(multisigAddress).to.exist;
 
     // Bind the contract to the new address
@@ -57,7 +59,10 @@ describe("Transfer function", () => {
 
     // Transfer funds to the multisig contract
     const amountToTransfer = 1230000000000;
-    const transfer = api.tx.balances.transfer(multisigAddress, amountToTransfer);
+    const transfer = api.tx.balances.transfer(
+      multisigAddress,
+      amountToTransfer
+    );
     await transfer.signAndSend(aliceKeyringPair);
 
     // Check the updated multisig balance
@@ -100,7 +105,7 @@ describe("Transfer function", () => {
       bobBalanceBefore.data.free.toBigInt() + BigInt(amountToTransfer)
     );
   });
-  
+
   it("Should fail to transfer funds to Bob because of insufficient funds", async () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
@@ -111,7 +116,9 @@ describe("Transfer function", () => {
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
-    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address])
+    const { address: multisigAddress } = await constructors.new(1, [
+      aliceKeyringPair.address,
+    ]);
     expect(multisigAddress).to.exist;
 
     // Bind the contract to the new address
@@ -125,7 +132,9 @@ describe("Transfer function", () => {
     const amountToTransfer = 1230000000000;
 
     // Check that the amount to transfer is greater than the multisig balance
-    expect(multisigInitialBalance.data.free.toBigInt() < BigInt(amountToTransfer)).to.be.true;
+    expect(
+      multisigInitialBalance.data.free.toBigInt() < BigInt(amountToTransfer)
+    ).to.be.true;
 
     // Now we can create the transfer tx from the multisig contract to Bob
     const selector =
@@ -150,15 +159,16 @@ describe("Transfer function", () => {
     // Before executing the transaction, we will subscribe to the Executed event
     // in order to check that the transaction has failed
     multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      //console.log('Transaction executed event received:', event);
       transferEvent = event;
     });
 
     // Execute the transaction on chain
     await multisig.tx.proposeTx(transferTx);
-    
-    //TODO: We expected the transaction to fail with TransferFailed but it fails with Decode
-    expect(transferEvent).to.have.nested.property('result.failed.envExecutionFailed', "Decode(Error)");
-  });
 
+    //TODO: We expected the transaction to fail with TransferFailed but it fails with Decode
+    expect(transferEvent).to.have.nested.property(
+      "result.failed.envExecutionFailed",
+      "Decode(Error)"
+    );
+  });
 });

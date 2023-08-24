@@ -107,7 +107,7 @@ const proposeTransaction = async (multisig, addOwnerTx) => {
   expect(rejections).to.equal(0);
 };
 
-describe.only("addOwnerFunction", () => {
+describe("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
     assignKeyringPairs();
