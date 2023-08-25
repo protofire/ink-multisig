@@ -2,11 +2,11 @@ import { expect } from "chai";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import ContractAbi from "../artifacts/multisig/multisig.json";
 import { MessageIndex } from "./utils/MessageIndex";
-import { hex_to_bytes } from "./utils/convertions";
 import {
   assignKeyringPairs,
   createABCMultiSigAndEnsureState,
   buildTransaction,
+  proposeTransaction,
 } from "./utils/testHelpers";
 
 let api;
@@ -46,22 +46,6 @@ after(() => {
   // Disconnect from the API on completion
   api.disconnect();
 });
-
-const proposeTransaction = async (multisig, addOwnerTx) => {
-  // Propose the transaction on chain
-  await multisig.tx.proposeTx(addOwnerTx);
-
-  // Check the state after the proposeTx call
-  let tx = await multisig.query.getTx(0);
-  expect(tx).to.exist;
-
-  // The proposed transaction has 1 approval and 0 rejections
-  const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-  expect(approvals).to.equal(1);
-
-  const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-  expect(rejections).to.equal(0);
-};
 
 describe("addOwnerFunction", () => {
   before(() => {
