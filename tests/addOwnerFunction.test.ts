@@ -1,12 +1,12 @@
 import { expect } from "chai";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import ContractAbi from "../artifacts/multisig/multisig.json";
-import { Transaction } from "../typed_contracts/multisig/types-arguments/multisig";
 import { MessageIndex } from "./utils/MessageIndex";
 import { hex_to_bytes } from "./utils/convertions";
 import {
   assignKeyringPairs,
   createABCMultiSigAndEnsureState,
+  buildTransaction,
 } from "./utils/testHelpers";
 
 let api;
@@ -47,27 +47,6 @@ after(() => {
   api.disconnect();
 });
 
-const buildTransaction = (address, addressToAdd) => {
-  // Get the selector of the add_owner message
-  const selector =
-    multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
-
-  // Create the argument for the add_owner message in the specified format
-  const arg = api.createType("AccountId", addressToAdd);
-  const arg_hex = arg.toHex();
-
-  const addOwnerTx: Transaction = {
-    address: address,
-    selector: selector!,
-    input: hex_to_bytes(arg_hex),
-    transferredValue: 0,
-    gasLimit: 100000000000,
-    allowReentry: true,
-  };
-
-  return addOwnerTx;
-};
-
 const proposeTransaction = async (multisig, addOwnerTx) => {
   // Propose the transaction on chain
   await multisig.tx.proposeTx(addOwnerTx);
@@ -101,7 +80,12 @@ describe("addOwnerFunction", () => {
       keypairs
     );
 
-    const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
+    const addOwnerTx = buildTransaction(
+      api,
+      address,
+      daveKeyringPair.address,
+      multisigMessageIndex
+    );
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, addOwnerTx);
@@ -140,7 +124,12 @@ describe("addOwnerFunction", () => {
       keypairs
     );
 
-    const addOwnerTx = buildTransaction(address, bobKeyringPair.address);
+    const addOwnerTx = buildTransaction(
+      api,
+      address,
+      bobKeyringPair.address,
+      multisigMessageIndex
+    );
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, addOwnerTx);
@@ -181,7 +170,12 @@ describe("addOwnerFunction", () => {
       keypairs
     );
 
-    const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
+    const addOwnerTx = buildTransaction(
+      api,
+      address,
+      daveKeyringPair.address,
+      multisigMessageIndex
+    );
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, addOwnerTx);
