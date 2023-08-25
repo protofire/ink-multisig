@@ -41,7 +41,7 @@ export default class Constructors {
 				response = await _signAndSend(this.nativeAPI.registry, tx, this.signer, (event: any) => event);
 			}
 			catch (error) {
-				//console.log(error);
+				console.log(error);
 			}
 
 		return {
