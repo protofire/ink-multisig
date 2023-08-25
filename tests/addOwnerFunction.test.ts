@@ -1,11 +1,13 @@
 import { expect } from "chai";
-import Constructors from "../typed_contracts/multisig/constructors/multisig";
-import Contract from "../typed_contracts/multisig/contracts/multisig";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import ContractAbi from "../artifacts/multisig/multisig.json";
 import { Transaction } from "../typed_contracts/multisig/types-arguments/multisig";
 import { MessageIndex } from "./utils/MessageIndex";
 import { hex_to_bytes } from "./utils/convertions";
+import {
+  assignKeyringPairs,
+  createABCMultiSigAndEnsureState,
+} from "./utils/testHelpers";
 
 let api;
 let keyring;
@@ -13,8 +15,13 @@ let aliceKeyringPair;
 let bobKeyringPair;
 let charlieKeyringPair;
 let daveKeyringPair;
+let keypairs = [
+  aliceKeyringPair,
+  bobKeyringPair,
+  charlieKeyringPair,
+  daveKeyringPair,
+];
 let multisigMessageIndex;
-let init_threshold = 2;
 
 before(async () => {
   try {
@@ -40,35 +47,28 @@ after(() => {
   api.disconnect();
 });
 
-const assignKeyringPairs = () => {
-  aliceKeyringPair = keyring.addFromUri("//Alice");
-  bobKeyringPair = keyring.addFromUri("//Bob");
-  charlieKeyringPair = keyring.addFromUri("//Charlie");
-  daveKeyringPair = keyring.addFromUri("//Dave");
-};
+// const createABCMultiSigAndEnsureState = async () => {
+//   // Create a new contract
+//   const constructors = new Constructors(api, aliceKeyringPair);
 
-const createABCMultiSigAndEnsureState = async () => {
-  // Create a new contract
-  const constructors = new Constructors(api, aliceKeyringPair);
+//   const { address } = await constructors.new(init_threshold, [
+//     aliceKeyringPair.address,
+//     bobKeyringPair.address,
+//     charlieKeyringPair.address,
+//   ]);
+//   expect(address).to.exist;
 
-  const { address } = await constructors.new(init_threshold, [
-    aliceKeyringPair.address,
-    bobKeyringPair.address,
-    charlieKeyringPair.address,
-  ]);
-  expect(address).to.exist;
+//   // Bind the contract to the new address
+//   const multisig = new Contract(address, aliceKeyringPair, api);
 
-  // Bind the contract to the new address
-  const multisig = new Contract(address, aliceKeyringPair, api);
+//   // Check the initial state
+//   const threshold = (await multisig.query.getThreshold()).value.unwrap();
+//   expect(threshold).to.equal(2);
+//   const owners = (await multisig.query.getOwners()).value.unwrap();
+//   expect(owners).to.have.lengthOf(3);
 
-  // Check the initial state
-  const threshold = (await multisig.query.getThreshold()).value.unwrap();
-  expect(threshold).to.equal(2);
-  const owners = (await multisig.query.getOwners()).value.unwrap();
-  expect(owners).to.have.lengthOf(3);
-
-  return [address, multisig];
-};
+//   return [address, multisig];
+// };
 
 const buildTransaction = (address, addressToAdd) => {
   // Get the selector of the add_owner message
@@ -110,14 +110,19 @@ const proposeTransaction = async (multisig, addOwnerTx) => {
 describe("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
-    assignKeyringPairs();
+    keypairs = assignKeyringPairs(keyring);
+    [aliceKeyringPair, bobKeyringPair, charlieKeyringPair, daveKeyringPair] =
+      keypairs;
     // Index that allows to get the selector of a message by its label
     multisigMessageIndex = new MessageIndex(ContractAbi);
   });
 
   it("Should add a new owner", async () => {
     // Create a new contract
-    const [address, multisig] = await createABCMultiSigAndEnsureState();
+    const [address, multisig] = await createABCMultiSigAndEnsureState(
+      api,
+      keypairs
+    );
 
     const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
@@ -153,7 +158,10 @@ describe("addOwnerFunction", () => {
 
   it("Should not add a repeated owner", async () => {
     // Create a new contract
-    const [address, multisig] = await createABCMultiSigAndEnsureState();
+    const [address, multisig] = await createABCMultiSigAndEnsureState(
+      api,
+      keypairs
+    );
 
     const addOwnerTx = buildTransaction(address, bobKeyringPair.address);
 
@@ -191,7 +199,10 @@ describe("addOwnerFunction", () => {
 
   it("Should not add a new owner when rejections make the aproval imposible to met", async () => {
     // Create a new contract
-    const [address, multisig] = await createABCMultiSigAndEnsureState();
+    const [address, multisig] = await createABCMultiSigAndEnsureState(
+      api,
+      keypairs
+    );
 
     const addOwnerTx = buildTransaction(address, daveKeyringPair.address);
 
