@@ -47,29 +47,6 @@ after(() => {
   api.disconnect();
 });
 
-// const createABCMultiSigAndEnsureState = async () => {
-//   // Create a new contract
-//   const constructors = new Constructors(api, aliceKeyringPair);
-
-//   const { address } = await constructors.new(init_threshold, [
-//     aliceKeyringPair.address,
-//     bobKeyringPair.address,
-//     charlieKeyringPair.address,
-//   ]);
-//   expect(address).to.exist;
-
-//   // Bind the contract to the new address
-//   const multisig = new Contract(address, aliceKeyringPair, api);
-
-//   // Check the initial state
-//   const threshold = (await multisig.query.getThreshold()).value.unwrap();
-//   expect(threshold).to.equal(2);
-//   const owners = (await multisig.query.getOwners()).value.unwrap();
-//   expect(owners).to.have.lengthOf(3);
-
-//   return [address, multisig];
-// };
-
 const buildTransaction = (address, addressToAdd) => {
   // Get the selector of the add_owner message
   const selector =
