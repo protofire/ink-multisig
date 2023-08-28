@@ -15,12 +15,7 @@ let aliceKeyringPair;
 let bobKeyringPair;
 let charlieKeyringPair;
 let daveKeyringPair;
-let keypairs = [
-  aliceKeyringPair,
-  bobKeyringPair,
-  charlieKeyringPair,
-  daveKeyringPair,
-];
+let keypairs;
 let multisigMessageIndex;
 
 before(async () => {
