@@ -8,6 +8,7 @@ import {
 import type { WeightV2 } from "@polkadot/types/interfaces";
 import fs from "fs";
 import path from "path";
+import { assignKeyringPairs } from "./testHelpers";
 
 interface FileContent {
   fileName: string;
@@ -95,7 +96,7 @@ async function deployContract(
   value: any
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
-    const alice = keyring.addFromUri("//Alice");
+    const aliceKeyringPair = assignKeyringPairs(keyring, 1)[0];
 
     const code = new CodePromise(api, contract, contract.source.wasm);
 
@@ -124,7 +125,7 @@ async function deployContract(
       response = await _signAndSend(
         api.registry,
         tx,
-        alice,
+        aliceKeyringPair,
         (event: any) => event
       );
     } catch (error) {

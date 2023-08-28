@@ -5,17 +5,19 @@ import MultisigContract from "../../typed_contracts/multisig/contracts/multisig"
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import { ContractFile } from "../../typed_contracts/multisig/contract-info/multisig";
 import { generateHash } from "../utils/convertions";
+import { assignKeyringPairs } from "../utils/testHelpers";
 
 let api;
 let keyring;
 let factoryContract;
 let factoryContract2;
+let aliceKeyringPair;
 
-async function setUpFactory(api,keyring) {
+async function setUpFactory(api, keyring) {
   let contract = JSON.parse(ContractFile);
   let wasm = contract.source.wasm;
   let codeHash = contract.source.hash;
-  const aliceKeyringPair = keyring.addFromUri("//Alice");
+  const aliceKeyringPair = assignKeyringPairs(keyring, 1)[0];
 
   // Upload the contract code first before deploying the factory
   const codeUploadTx = api.tx.contracts.uploadCode(wasm, null, true);
@@ -26,15 +28,13 @@ async function setUpFactory(api,keyring) {
   const { address: factoryAddress } = await factoryConstructors.new(codeHash);
 
   // Bind the contract to the new address
-  factoryContract = new FactoryContract(
-    factoryAddress,
-    aliceKeyringPair,
-    api
-  );
+  factoryContract = new FactoryContract(factoryAddress, aliceKeyringPair, api);
 
   // Deploy another factory contract with a inexisting codehash
   const inexistingCodeHash = new Array(32).fill(0);
-  const { address: factoryAddress2 } = await factoryConstructors.new(inexistingCodeHash);
+  const { address: factoryAddress2 } = await factoryConstructors.new(
+    inexistingCodeHash
+  );
 
   factoryContract2 = new FactoryContract(
     factoryAddress2,
@@ -58,7 +58,7 @@ before(async () => {
     keyring = new Keyring({ type: "sr25519" });
 
     // Set up the factory contract
-    await setUpFactory(api,keyring);
+    await setUpFactory(api, keyring);
   } catch (error) {
     console.error(error);
     process.exit(1); // Terminate the execution
@@ -71,9 +71,12 @@ after(() => {
 });
 
 describe("Multisig Factory", () => {
-  it("Should create a new multisig succesfully", async () => {
-    let aliceKeyringPair = keyring.addFromUri("//Alice");
+  before(() => {
+    const keypairs = assignKeyringPairs(keyring, 1);
+    [aliceKeyringPair] = keypairs;
+  });
 
+  it("Should create a new multisig succesfully", async () => {
     //Listen for the event
     let newMultisigEvent;
     factoryContract.events.subscribeOnNewMultisigEvent((event) => {
@@ -82,11 +85,7 @@ describe("Multisig Factory", () => {
 
     // Deploy a new multisig contract from the factory
     const salt = generateHash(Date.now().toString());
-    await factoryContract.tx.newMultisig(
-      1,
-      [aliceKeyringPair.address],
-      salt
-    );
+    await factoryContract.tx.newMultisig(1, [aliceKeyringPair.address], salt);
 
     // Check that the new multisig contract was deployed correctly
     expect(newMultisigEvent.threshold).to.equal(1);
@@ -112,21 +111,18 @@ describe("Multisig Factory", () => {
   });
 
   it("Should fail to create a new multisig because owners cant be empty", async () => {
-    let aliceKeyringPair = keyring.addFromUri("//Alice");
     // Try Deploy a new multisig contract from the factory
     const salt = generateHash(Date.now().toString());
-    let result = await factoryContract.query.newMultisig(
-      2,
-      [],
-      salt
-    );
+    let result = await factoryContract.query.newMultisig(2, [], salt);
 
     // Check the error message
-    expect(result.value.ok?.err).to.have.nested.property('ownersCantBeEmpty', null);
+    expect(result.value.ok?.err).to.have.nested.property(
+      "ownersCantBeEmpty",
+      null
+    );
   });
 
   it("Should fail to create a new multisig because threshold greater than owners", async () => {
-    let aliceKeyringPair = keyring.addFromUri("//Alice");
     // Try Deploy a new multisig contract from the factory
     const salt = generateHash(Date.now().toString());
     let result = await factoryContract.query.newMultisig(
@@ -136,11 +132,13 @@ describe("Multisig Factory", () => {
     );
 
     // Check the error message
-    expect(result.value.ok?.err).to.have.nested.property('thresholdGreaterThanOwners', null);
+    expect(result.value.ok?.err).to.have.nested.property(
+      "thresholdGreaterThanOwners",
+      null
+    );
   });
 
   it("Should fail to create a new multisig because threshold is 0", async () => {
-    let aliceKeyringPair = keyring.addFromUri("//Alice");
     // Try Deploy a new multisig contract from the factory
     const salt = generateHash(Date.now().toString());
     let result = await factoryContract.query.newMultisig(
@@ -150,11 +148,13 @@ describe("Multisig Factory", () => {
     );
 
     // Check the error message
-    expect(result.value.ok?.err).to.have.nested.property('thresholdCantBeZero', null);
+    expect(result.value.ok?.err).to.have.nested.property(
+      "thresholdCantBeZero",
+      null
+    );
   });
 
   it("Should fail to create a new multisig because wrong codehash", async () => {
-    let aliceKeyringPair = keyring.addFromUri("//Alice");
     // Try Deploy a new multisig contract from the factory with a wrong codehash
     const salt = generateHash(Date.now().toString());
     let result = await factoryContract2.query.newMultisig(
@@ -164,6 +164,9 @@ describe("Multisig Factory", () => {
     );
 
     // Check the error message
-    expect(result.value.ok?.err).to.have.nested.property('envExecutionFailed', "CodeNotFound");
+    expect(result.value.ok?.err).to.have.nested.property(
+      "envExecutionFailed",
+      "CodeNotFound"
+    );
   });
 });
