@@ -3,6 +3,7 @@ import { hex_to_bytes } from "./convertions";
 import Contract from "../../typed_contracts/multisig/contracts/multisig";
 import Constructors from "../../typed_contracts/multisig/constructors/multisig";
 import { Transaction } from "../../typed_contracts/multisig/types-arguments/multisig";
+import { on } from "events";
 
 let init_threshold = 2;
 
@@ -56,35 +57,43 @@ export const createABCMultiSigAndEnsureState = async (api, keypairs) => {
   return [address, multisig];
 };
 
-export const buildTransaction = (
+export const buildTransaction = async (
   api,
-  senderAddress,
-  addressToAdd,
+  contractAddress,
+  fnNameToBeCalled,
+  fnArgs,
   multisigMessageIndex
 ) => {
   // Get the selector of the add_owner message
   const selector =
-    multisigMessageIndex.getMessageInfo("add_owner")?.selector.bytes;
+    multisigMessageIndex.getMessageInfo(fnNameToBeCalled)?.selector.bytes;
 
-  // Create the argument for the add_owner message in the specified format
-  const arg = api.createType("AccountId", addressToAdd);
-  const arg_hex = arg.toHex();
+  const args = multisigMessageIndex.transformArgsToBytes(
+    api,
+    fnNameToBeCalled,
+    fnArgs
+  );
 
-  const addOwnerTx: Transaction = {
-    address: senderAddress,
+  let contractInfo = await api.query.contracts.contractInfoOf(contractAddress);
+
+  let isReentrancyCall =
+    contractInfo.toHuman().codeHash === multisigMessageIndex.getCodeHash();
+
+  const tx: Transaction = {
+    address: contractAddress,
     selector: selector!,
-    input: hex_to_bytes(arg_hex),
+    input: args,
     transferredValue: 0,
-    gasLimit: 100000000000,
-    allowReentry: true,
+    gasLimit: 0,
+    allowReentry: isReentrancyCall,
   };
 
-  return addOwnerTx;
+  return tx;
 };
 
-export const proposeTransaction = async (multisig, addOwnerTx) => {
+export const proposeTransaction = async (multisig, txToPropose) => {
   // Propose the transaction on chain
-  await multisig.tx.proposeTx(addOwnerTx);
+  await multisig.tx.proposeTx(txToPropose);
 
   // Check the state after the proposeTx call
   let tx = await multisig.query.getTx(0);

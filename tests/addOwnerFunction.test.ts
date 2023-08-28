@@ -64,10 +64,11 @@ describe("addOwnerFunction", () => {
       keypairs
     );
 
-    const addOwnerTx = buildTransaction(
+    const addOwnerTx = await buildTransaction(
       api,
       address,
-      daveKeyringPair.address,
+      "add_owner",
+      [daveKeyringPair.address],
       multisigMessageIndex
     );
 
@@ -111,7 +112,8 @@ describe("addOwnerFunction", () => {
     const addOwnerTx = buildTransaction(
       api,
       address,
-      bobKeyringPair.address,
+      "add_owner",
+      [bobKeyringPair.address],
       multisigMessageIndex
     );
 
@@ -157,7 +159,8 @@ describe("addOwnerFunction", () => {
     const addOwnerTx = buildTransaction(
       api,
       address,
-      daveKeyringPair.address,
+      "add_owner",
+      [daveKeyringPair.address],
       multisigMessageIndex
     );
 
