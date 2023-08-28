@@ -73,7 +73,7 @@ describe("addOwnerFunction", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx);
+    await proposeTransaction(multisig, addOwnerTx, 0);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -118,7 +118,7 @@ describe("addOwnerFunction", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx);
+    await proposeTransaction(multisig, addOwnerTx, 0);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -165,7 +165,7 @@ describe("addOwnerFunction", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx);
+    await proposeTransaction(multisig, addOwnerTx, 0);
 
     // Reject the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.rejectTx(0);

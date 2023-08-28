@@ -91,12 +91,12 @@ export const buildTransaction = async (
   return tx;
 };
 
-export const proposeTransaction = async (multisig, txToPropose) => {
+export const proposeTransaction = async (multisig, txToPropose, txIndex) => {
   // Propose the transaction on chain
   await multisig.tx.proposeTx(txToPropose);
 
   // Check the state after the proposeTx call
-  let tx = await multisig.query.getTx(0);
+  let tx = await multisig.query.getTx(txIndex);
   expect(tx).to.exist;
 
   // The proposed transaction has 1 approval and 0 rejections
