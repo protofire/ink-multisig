@@ -21,6 +21,7 @@ export interface TransactionProposed {
 	transferredValue: ReturnNumber;
 	gasLimit: number;
 	allowReentry: boolean;
+	proposer: ReturnTypes.AccountId;
 }
 
 export interface Approve {
