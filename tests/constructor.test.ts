@@ -2,9 +2,14 @@ import { expect } from "chai";
 import Constructors from "../typed_contracts/multisig/constructors/multisig";
 import Contract from "../typed_contracts/multisig/contracts/multisig";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
+import { assignKeyringPairs } from "./utils/testHelpers";
 
 let api;
 let keyring;
+let keypairs;
+let aliceKeyringPair;
+let bobKeyringPair;
+let charlieKeyringPair;
 
 before(async () => {
   try {
@@ -31,12 +36,15 @@ after(() => {
 });
 
 describe("Constructor tests", () => {
+  before(() => {
+    // call function to create keyring pairs
+    keypairs = assignKeyringPairs(keyring, 3);
+    [aliceKeyringPair, bobKeyringPair, charlieKeyringPair] = keypairs;
+  });
+
   it("Alice should create a new multisig succesfully with her, Bob and Charlie", async () => {
     // Initial args
     const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
-    const charlieKeyringPair = keyring.addFromUri("//Charlie");
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -64,9 +72,6 @@ describe("Constructor tests", () => {
   it("Alice should create a new multisig succesfully with only Bob and Charlie", async () => {
     // Initial args
     const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
-    const charlieKeyringPair = keyring.addFromUri("//Charlie");
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -96,8 +101,6 @@ describe("Constructor tests", () => {
   it("Should error because threshold is greater than owners", async () => {
     // Initial args
     const init_threshold = 3;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
 
     // Try to create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -115,8 +118,6 @@ describe("Constructor tests", () => {
   it("Should error because threshold is 0", async () => {
     // Initial args
     const init_threshold = 0;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
 
     // Try to create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -134,8 +135,6 @@ describe("Constructor tests", () => {
   it("Should error because owners cannot be empty", async () => {
     // Initial args
     const init_threshold = 2;
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
 
     // Try to create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);

@@ -5,6 +5,7 @@ import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import { Transaction } from "../typed_contracts/multisig/types-arguments/multisig";
 import { MessageIndex } from "./utils/MessageIndex";
 import { deployExternalContracts } from "./utils/contractsDeployment";
+import { assignKeyringPairs } from "./utils/testHelpers";
 
 let api;
 let keyring;
@@ -39,19 +40,20 @@ after(() => {
 
 describe("Test payable message", () => {
   it("Should transfer funds from multisig to other contract", async () => {
-
     let payableContractAddress =
       externalContracts["payable_contract.contract"].address;
     let PayableContract = externalContracts["payable_contract.contract"].abi;
 
     const payableContractMessageIndex = new MessageIndex(PayableContract);
 
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
+    const aliceKeyringPair = assignKeyringPairs(keyring, 1)[0];
 
     // Create a new multisig contract
     const constructors = new Constructors(api, aliceKeyringPair);
 
-    const { address: multisigAddress } = await constructors.new(1, [aliceKeyringPair.address])
+    const { address: multisigAddress } = await constructors.new(1, [
+      aliceKeyringPair.address,
+    ]);
 
     // Bind the contract to the new address
     const multisig = new Contract(multisigAddress, aliceKeyringPair, api);
@@ -82,7 +84,8 @@ describe("Test payable message", () => {
 
     // Get the selector of the add_owner message
     const selector =
-      payableContractMessageIndex.getMessageInfo("deposit_funds")?.selector.bytes;
+      payableContractMessageIndex.getMessageInfo("deposit_funds")?.selector
+        .bytes;
 
     // Create the transaction
     const depositFundsTx: Transaction = {
@@ -103,7 +106,8 @@ describe("Test payable message", () => {
     );
     //console.log("Payable contract balance after transfer: ", payableContractBalance.data.free.toNumber());
     expect(payableContractBalance.data.free.toBigInt()).to.equal(
-      payableContractInitialBalance.data.free.toBigInt() + BigInt(transferAmount)
+      payableContractInitialBalance.data.free.toBigInt() +
+        BigInt(transferAmount)
     );
   });
 });

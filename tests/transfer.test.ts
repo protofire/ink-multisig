@@ -5,6 +5,7 @@ import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import ContractAbi from "../artifacts/multisig/multisig.json";
 import { Transaction } from "../typed_contracts/multisig/types-arguments/multisig";
 import { MessageIndex } from "./utils/MessageIndex";
+import { assignKeyringPairs } from "./utils/testHelpers";
 
 let api;
 let keyring;
@@ -38,9 +39,9 @@ describe("Transfer function", () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
 
-    // Initial accounts
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
+    let keypairs = assignKeyringPairs(keyring, 2);
+    const aliceKeyringPair = keypairs[0];
+    const bobKeyringPair = keypairs[1];
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
@@ -110,9 +111,9 @@ describe("Transfer function", () => {
     // Index that allows to get the selector of a message by its label
     const multisigMessageIndex = new MessageIndex(ContractAbi);
 
-    // Initial accounts
-    const aliceKeyringPair = keyring.addFromUri("//Alice");
-    const bobKeyringPair = keyring.addFromUri("//Bob");
+    let keypairs = assignKeyringPairs(keyring, 2);
+    const aliceKeyringPair = keypairs[0];
+    const bobKeyringPair = keypairs[1];
 
     // Create a new contract
     const constructors = new Constructors(api, aliceKeyringPair);
