@@ -6,17 +6,31 @@ import { Transaction } from "../../typed_contracts/multisig/types-arguments/mult
 
 let init_threshold = 2;
 
-export const assignKeyringPairs = (keyring) => {
-  let aliceKeyringPair = keyring.addFromUri("//Alice");
-  let bobKeyringPair = keyring.addFromUri("//Bob");
-  let charlieKeyringPair = keyring.addFromUri("//Charlie");
-  let daveKeyringPair = keyring.addFromUri("//Dave");
-  return [
+export const assignKeyringPairs = (keyring, size) => {
+  const aliceKeyringPair = keyring.addFromUri("//Alice");
+  const bobKeyringPair = keyring.addFromUri("//Bob");
+  const charlieKeyringPair = keyring.addFromUri("//Charlie");
+  const daveKeyringPair = keyring.addFromUri("//Dave");
+  const eveKeyringPair = keyring.addFromUri("//Eve");
+  const ferdieKeyringPair = keyring.addFromUri("//Ferdie");
+  const georgeKeyringPair = keyring.addFromUri("//George");
+  const hannahKeyringPair = keyring.addFromUri("//Hannah");
+  const idaKeyringPair = keyring.addFromUri("//Ida");
+  const johnKeyringPair = keyring.addFromUri("//John");
+  const keypairs = [
     aliceKeyringPair,
     bobKeyringPair,
     charlieKeyringPair,
     daveKeyringPair,
+    eveKeyringPair,
+    ferdieKeyringPair,
+    georgeKeyringPair,
+    hannahKeyringPair,
+    idaKeyringPair,
+    johnKeyringPair,
   ];
+
+  return keypairs.slice(0, size);
 };
 
 export const createABCMultiSigAndEnsureState = async (api, keypairs) => {

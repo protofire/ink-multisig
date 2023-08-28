@@ -50,7 +50,7 @@ after(() => {
 describe("addOwnerFunction", () => {
   before(() => {
     // call function to create keyring pairs
-    keypairs = assignKeyringPairs(keyring);
+    keypairs = assignKeyringPairs(keyring, 4);
     [aliceKeyringPair, bobKeyringPair, charlieKeyringPair, daveKeyringPair] =
       keypairs;
     // Index that allows to get the selector of a message by its label
