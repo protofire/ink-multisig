@@ -14,18 +14,22 @@ jobs:
 
     - name: Create new branch and push
       run: |
+        SHORT_HASH=$(git rev-parse --short HEAD)
+
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
         
         git clone https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git xsigners_sdk 
         cp -r typed_contracts xsigners_sdk/src/
         
-        cd xsigners_sdk 
-        git remote set-url origin https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git
-        git checkout -b sync-contracts-src
+        cd xsigners_sdk
+        git remote set-url origin https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git        
+        
+        BRANCH_NAME="sync-contracts-src-${SHORT_HASH}"
+        git checkout -b $BRANCH_NAME
         git add .
         git commit -m "Sync from contracts source repo"
-        git push origin sync-contracts-src
+        git push origin $BRANCH_NAME
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v3
