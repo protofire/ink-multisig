@@ -8,6 +8,8 @@ import {
   buildTransaction,
   proposeTransaction,
 } from "./utils/testHelpers";
+import Contract from "../typed_contracts/multisig/contracts/multisig";
+import Constructors from "../typed_contracts/multisig/constructors/multisig";
 
 let api;
 let keyring;
@@ -187,5 +189,56 @@ describe("addOwnerFunction", () => {
     expect(newOwners).to.include(bobKeyringPair.address);
     expect(newOwners).to.include(charlieKeyringPair.address);
     expect(newOwners).to.not.include(daveKeyringPair.address);
+  });
+
+  it("Should not add a new owner when MAX_OWNERS is reached", async () => {
+    let keypairs = assignKeyringPairs(keyring, 10);
+    let zetaKeyPair = keyring.addFromUri("//Zeta");
+
+    // Create a new contract
+    const constructors = new Constructors(api, keypairs[0]);
+
+    const { address } = await constructors.new(2, [
+      keypairs[0].address,
+      keypairs[1].address,
+      keypairs[2].address,
+      keypairs[3].address,
+      keypairs[4].address,
+      keypairs[5].address,
+      keypairs[6].address,
+      keypairs[7].address,
+      keypairs[8].address,
+      keypairs[9].address,
+    ]);
+
+    // Bind the contract to the new address
+    const multisig = new Contract(address, keypairs[0], api);
+
+    //Listen for the event
+    let newTxExecutedEvent;
+    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
+      newTxExecutedEvent = event;
+    });
+
+    const addOwnerTx = await buildTransaction(
+      api,
+      address,
+      "add_owner",
+      [zetaKeyPair.address],
+      multisigMessageIndex
+    );
+
+    // Propose the transaction on chain
+    await proposeTransaction(multisig, addOwnerTx, 0);
+
+    // Approve the transaction by Bob
+    await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
+
+    // Emit the error in the event
+    expect(newTxExecutedEvent).to.exist;
+    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
+    expect(Object.keys(newTxExecutedEvent.result.failed)).to.include(
+      "envExecutionFailed"
+    );
   });
 });

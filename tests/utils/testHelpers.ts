@@ -1,9 +1,7 @@
 import { expect } from "chai";
-import { hex_to_bytes } from "./convertions";
 import Contract from "../../typed_contracts/multisig/contracts/multisig";
 import Constructors from "../../typed_contracts/multisig/constructors/multisig";
 import { Transaction } from "../../typed_contracts/multisig/types-arguments/multisig";
-import { on } from "events";
 
 let init_threshold = 2;
 
