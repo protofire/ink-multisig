@@ -10,7 +10,6 @@ import {
 } from "./utils/testHelpers";
 import Contract from "../typed_contracts/multisig/contracts/multisig";
 import Constructors from "../typed_contracts/multisig/constructors/multisig";
-import { rm } from "fs";
 
 let api;
 let keyring;
@@ -45,7 +44,7 @@ after(() => {
   api.disconnect();
 });
 
-describe("removeOwnerFunction", () => {
+describe("Remove Owner Function", () => {
   before(() => {
     // call function to create keyring pairs
     keypairs = assignKeyringPairs(keyring, 4);
