@@ -32,11 +32,15 @@ export const assignKeyringPairs = (keyring, size) => {
   return keypairs.slice(0, size);
 };
 
-export const createABCMultiSigAndEnsureState = async (api, keypairs) => {
+export const createABCMultiSigAndEnsureState = async (
+  api,
+  keypairs,
+  default_threshold = init_threshold
+) => {
   // Create a new contract
   const constructors = new Constructors(api, keypairs[0]);
 
-  const { address } = await constructors.new(init_threshold, [
+  const { address } = await constructors.new(default_threshold, [
     keypairs[0].address,
     keypairs[1].address,
     keypairs[2].address,
@@ -48,7 +52,7 @@ export const createABCMultiSigAndEnsureState = async (api, keypairs) => {
 
   // Check the initial state
   const threshold = (await multisig.query.getThreshold()).value.unwrap();
-  expect(threshold).to.equal(2);
+  expect(threshold).to.equal(default_threshold);
   const owners = (await multisig.query.getOwners()).value.unwrap();
   expect(owners).to.have.lengthOf(3);
 
