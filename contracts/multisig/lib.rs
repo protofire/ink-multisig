@@ -105,6 +105,8 @@ mod multisig {
         gas_limit: u64,
         /// Allow reentry flag of the call
         allow_reentry: bool,
+        /// Address of the transaction proposer
+        proposer: AccountId,
     }
 
     /// Emmited when a transaction is approved
@@ -354,6 +356,7 @@ mod multisig {
                     transferred_value: tx.transferred_value,
                     gas_limit: tx.gas_limit,
                     allow_reentry: tx.allow_reentry,
+                    proposer: self.env().caller(),
                 }),
             );
 
@@ -622,6 +625,9 @@ mod multisig {
         }
 
         fn _try_execute_tx(&mut self, tx_id: TxId) {
+            // Save current changes to storage
+            self.flush();
+
             // check threshold met
             if self.check_threshold_met(tx_id) {
                 // execute transaction

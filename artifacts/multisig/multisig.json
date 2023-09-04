@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x928c62eb71af918e760c538669a2577216a971a611aa5f78f062210e2a3a07a7",
+    "hash": "0x666d9f46a96e595c8a26ddf51dd4eada8344b1f1872566d587883b604e606c97",
     "language": "ink! 4.2.0",
     "compiler": "rustc 1.69.0-nightly",
     "build_info": {
@@ -264,6 +264,19 @@
                 "bool"
               ],
               "type": 9
+            }
+          },
+          {
+            "docs": [
+              " Address of the transaction proposer"
+            ],
+            "indexed": false,
+            "label": "proposer",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 1
             }
           }
         ],
