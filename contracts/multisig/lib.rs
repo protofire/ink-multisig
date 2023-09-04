@@ -625,6 +625,9 @@ mod multisig {
         }
 
         fn _try_execute_tx(&mut self, tx_id: TxId) {
+            // Save current changes to storage
+            self.flush();
+
             // check threshold met
             if self.check_threshold_met(tx_id) {
                 // execute transaction
