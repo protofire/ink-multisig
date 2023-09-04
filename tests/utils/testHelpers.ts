@@ -96,22 +96,26 @@ export const buildTransaction = async (
 };
 
 export const proposeTransaction = async (multisig, txToPropose, txIndex) => {
-  //TODO: Check threshold
-  // If the threshold is 1, the transaction is executed automatically so we cannot check the state
-
   // Propose the transaction on chain
   await multisig.tx.proposeTx(txToPropose);
 
-  // Check the state after the proposeTx call
-  let tx = await multisig.query.getTx(txIndex);
-  
+  let threshold = (await multisig.query.getThreshold()).value.unwrap();
+
   let nextTxId = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
   expect(nextTxId).to.equal(txIndex + 1);
 
   // The proposed transaction has 1 approval and 0 rejections
   const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-  //expect(approvals).to.equal(1);
-
   const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-  //expect(rejections).to.equal(0);
+
+  // The following expects only make sense if the threshold is not 1
+  // because if the threshold is 1, the transaction is automatically executed
+  // and the approvals and rejections are reset to 0
+  if (Number(threshold) !== 1) {
+    // Check the state after the proposeTx call
+    let tx = await multisig.query.getTx(txIndex);
+    expect(tx).to.exist;
+    expect(approvals).to.equal(1);
+    expect(rejections).to.equal(0);
+  }
 };
