@@ -34,11 +34,15 @@ export const assignKeyringPairs = (keyring, size) => {
   return keypairs.slice(0, size);
 };
 
-export const createABCMultiSigAndEnsureState = async (api, keypairs) => {
+export const createABCMultiSigAndEnsureState = async (
+  api,
+  keypairs,
+  default_threshold = init_threshold
+) => {
   // Create a new contract
   const constructors = new Constructors(api, keypairs[0]);
 
-  const { address } = await constructors.new(init_threshold, [
+  const { address } = await constructors.new(default_threshold, [
     keypairs[0].address,
     keypairs[1].address,
     keypairs[2].address,
@@ -50,7 +54,7 @@ export const createABCMultiSigAndEnsureState = async (api, keypairs) => {
 
   // Check the initial state
   const threshold = (await multisig.query.getThreshold()).value.unwrap();
-  expect(threshold).to.equal(2);
+  expect(threshold).to.equal(default_threshold);
   const owners = (await multisig.query.getOwners()).value.unwrap();
   expect(owners).to.have.lengthOf(3);
 
@@ -91,23 +95,29 @@ export const buildTransaction = async (
   return tx;
 };
 
-export const proposeTransaction = async (multisig, txToPropose, txIndex) => {
-  //TODO: Check threshold
-  // If the threshold is 1, the transaction is executed automatically so we cannot check the state
-
+export const proposeTransaction = async (multisig, txToPropose) => {
+  let txIndex = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
   // Propose the transaction on chain
   await multisig.tx.proposeTx(txToPropose);
 
-  // Check the state after the proposeTx call
-  let tx = await multisig.query.getTx(txIndex);
+  let threshold = (await multisig.query.getThreshold()).value.unwrap();
+
   let nextTxId = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
-  //expect(tx).to.exist;
   expect(nextTxId).to.equal(txIndex + 1);
 
-  // The proposed transaction has 1 approval and 0 rejections
-  const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-  //expect(approvals).to.equal(1);
+  // The following expects only make sense if the threshold is not 1
+  // because if the threshold is 1, the transaction is automatically executed
+  // and the approvals and rejections are reset to 0
+  if (Number(threshold) !== 1) {
+    // Check the state after the proposeTx call
+    let tx = await multisig.query.getTx(txIndex);
 
-  const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-  //expect(rejections).to.equal(0);
+    // The proposed transaction has 1 approval and 0 rejections
+    const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
+    const rejections = (await multisig.query.getTxRejections(0)).value.ok;
+
+    expect(tx).to.exist;
+    expect(approvals).to.equal(1);
+    expect(rejections).to.equal(0);
+  }
 };

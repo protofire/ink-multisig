@@ -1,14 +1,14 @@
 import { expect } from "chai";
-import Constructors from "../typed_contracts/multisig/constructors/multisig";
-import ContractAbi from "../artifacts/multisig/multisig.json";
+import Constructors from "../../typed_contracts/multisig/constructors/multisig";
+import ContractAbi from "../../artifacts/multisig/multisig.json";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import {
   assignKeyringPairs,
   buildTransaction,
   proposeTransaction,
-} from "./utils/testHelpers";
-import { MessageIndex } from "./utils/MessageIndex";
-import Contract from "../typed_contracts/multisig/contracts/multisig";
+} from "../utils/testHelpers";
+import { MessageIndex } from "../utils/MessageIndex";
+import Contract from "../../typed_contracts/multisig/contracts/multisig";
 
 let api;
 let keyring;
@@ -48,7 +48,7 @@ describe("TxId Test", () => {
     [aliceKeyringPair, bobKeyringPair] = keypairs;
   });
 
-  it.only("TxId should increment", async () => {
+  it("TxId should increment", async () => {
     multisigMessageIndex = new MessageIndex(ContractAbi);
 
     // Initial args
@@ -76,13 +76,15 @@ describe("TxId Test", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Propose the same transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 1);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Check that the txId has been incremented
-    const nextTxId = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
+    const nextTxId = (await multisig.query.getNextTxId()).value
+      .unwrap()
+      .toNumber();
     expect(nextTxId).to.equal(2);
   });
 });
