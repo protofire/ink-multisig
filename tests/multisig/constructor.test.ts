@@ -1,8 +1,8 @@
 import { expect } from "chai";
-import Constructors from "../typed_contracts/multisig/constructors/multisig";
-import Contract from "../typed_contracts/multisig/contracts/multisig";
+import Constructors from "../../typed_contracts/multisig/constructors/multisig";
+import Contract from "../../typed_contracts/multisig/contracts/multisig";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import { assignKeyringPairs } from "./utils/testHelpers";
+import { assignKeyringPairs } from "../utils/testHelpers";
 
 let api;
 let keyring;

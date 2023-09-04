@@ -1,14 +1,14 @@
 import { expect } from "chai";
-import Constructors from "../typed_contracts/multisig/constructors/multisig";
-import ContractAbi from "../artifacts/multisig/multisig.json";
+import Constructors from "../../typed_contracts/multisig/constructors/multisig";
+import ContractAbi from "../../artifacts/multisig/multisig.json";
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 import {
   assignKeyringPairs,
   buildTransaction,
   proposeTransaction,
-} from "./utils/testHelpers";
-import { MessageIndex } from "./utils/MessageIndex";
-import Contract from "../typed_contracts/multisig/contracts/multisig";
+} from "../utils/testHelpers";
+import { MessageIndex } from "../utils/MessageIndex";
+import Contract from "../../typed_contracts/multisig/contracts/multisig";
 
 let api;
 let keyring;
