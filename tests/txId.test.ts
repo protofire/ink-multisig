@@ -48,7 +48,7 @@ describe("TxId Test", () => {
     [aliceKeyringPair, bobKeyringPair] = keypairs;
   });
 
-  it.only("TxId should increment", async () => {
+  it("TxId should increment", async () => {
     multisigMessageIndex = new MessageIndex(ContractAbi);
 
     // Initial args
@@ -82,7 +82,9 @@ describe("TxId Test", () => {
     await proposeTransaction(multisig, addOwnerTx, 1);
 
     // Check that the txId has been incremented
-    const nextTxId = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
+    const nextTxId = (await multisig.query.getNextTxId()).value
+      .unwrap()
+      .toNumber();
     expect(nextTxId).to.equal(2);
   });
 });
