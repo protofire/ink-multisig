@@ -95,7 +95,8 @@ export const buildTransaction = async (
   return tx;
 };
 
-export const proposeTransaction = async (multisig, txToPropose, txIndex) => {
+export const proposeTransaction = async (multisig, txToPropose) => {
+  let txIndex = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
   // Propose the transaction on chain
   await multisig.tx.proposeTx(txToPropose);
 
@@ -104,16 +105,17 @@ export const proposeTransaction = async (multisig, txToPropose, txIndex) => {
   let nextTxId = (await multisig.query.getNextTxId()).value.unwrap().toNumber();
   expect(nextTxId).to.equal(txIndex + 1);
 
-  // The proposed transaction has 1 approval and 0 rejections
-  const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
-  const rejections = (await multisig.query.getTxRejections(0)).value.ok;
-
   // The following expects only make sense if the threshold is not 1
   // because if the threshold is 1, the transaction is automatically executed
   // and the approvals and rejections are reset to 0
   if (Number(threshold) !== 1) {
     // Check the state after the proposeTx call
     let tx = await multisig.query.getTx(txIndex);
+
+    // The proposed transaction has 1 approval and 0 rejections
+    const approvals = (await multisig.query.getTxApprovals(0)).value.ok;
+    const rejections = (await multisig.query.getTxRejections(0)).value.ok;
+
     expect(tx).to.exist;
     expect(approvals).to.equal(1);
     expect(rejections).to.equal(0);

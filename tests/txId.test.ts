@@ -76,10 +76,10 @@ describe("TxId Test", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Propose the same transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 1);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Check that the txId has been incremented
     const nextTxId = (await multisig.query.getNextTxId()).value

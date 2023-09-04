@@ -11,7 +11,6 @@ import {
 import Contract from "../typed_contracts/multisig/contracts/multisig";
 import Constructors from "../typed_contracts/multisig/constructors/multisig";
 
-
 let api;
 let keyring;
 let aliceKeyringPair;
@@ -71,7 +70,7 @@ describe("Add Owner Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -116,7 +115,7 @@ describe("Add Owner Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -163,7 +162,7 @@ describe("Add Owner Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Reject the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.rejectTx(0);
@@ -230,7 +229,7 @@ describe("Add Owner Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, addOwnerTx, 0);
+    await proposeTransaction(multisig, addOwnerTx);
 
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);

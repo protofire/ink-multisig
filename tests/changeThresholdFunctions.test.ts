@@ -69,7 +69,7 @@ describe("Change Threshold Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, changeThresholdTx, 0);
+    await proposeTransaction(multisig, changeThresholdTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -110,7 +110,7 @@ describe("Change Threshold Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, changeThresholdTx, 0);
+    await proposeTransaction(multisig, changeThresholdTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -151,7 +151,7 @@ describe("Change Threshold Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, changeThresholdTx, 0);
+    await proposeTransaction(multisig, changeThresholdTx);
 
     //Listen for the event
     let newTxExecutedEvent;

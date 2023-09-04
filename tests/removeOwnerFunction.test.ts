@@ -70,7 +70,7 @@ describe("Remove Owner Function", () => {
     );
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, rmOwnerTx, 0);
+    await proposeTransaction(multisig, rmOwnerTx);
 
     //Listen for the event
     let newTxExecutedEvent;
@@ -119,7 +119,7 @@ describe("Remove Owner Function", () => {
     });
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, rmOwnerTx, 0);
+    await proposeTransaction(multisig, rmOwnerTx);
 
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
@@ -209,7 +209,7 @@ describe("Remove Owner Function", () => {
     });
 
     // Propose the transaction on chain
-    await proposeTransaction(multisig, rmOwnerTx, 0);
+    await proposeTransaction(multisig, rmOwnerTx);
 
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
