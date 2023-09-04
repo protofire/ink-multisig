@@ -2,8 +2,11 @@ name: Sync to SDK Repository
 
 on:
   push:
+    branches:
+      - master
+      - develop
     paths:
-    - 'typed_contracts/**'
+      - 'typed_contracts/**'
 
 jobs:
   sync:
@@ -12,17 +15,22 @@ jobs:
     - name: Checkout source repo
       uses: actions/checkout@v2
 
-    - name: Push to destination repo
+    - name: Create new branch and push
       run: |
+        SHORT_HASH=$(git rev-parse --short HEAD)
+
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
         
         git clone https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git xsigners_sdk 
         cp -r typed_contracts xsigners_sdk/src/
         
-        cd xsigners_sdk 
-        git remote set-url origin https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git
+        cd xsigners_sdk
+        git remote set-url origin https://${{ secrets.XSIGNER_ACCESS_TOKEN }}@github.com/protofire/xsigners-sdk.git        
+        
+        BRANCH_NAME="sync-contracts-src-${SHORT_HASH}"
+        git checkout -b $BRANCH_NAME
         git add .
         git commit -m "Sync from contracts source repo"
-        git push
+        git push origin $BRANCH_NAME
 
