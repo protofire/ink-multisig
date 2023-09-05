@@ -15,15 +15,31 @@ test:             ## Run the tests.
 clean:            ## Clean the project.
 	rm -rf ./typed_contracts/* && rm -rf ./artifacts/*
 
-build:            ## Build the contracts.
-	cd contracts && cargo contract build --release && cd .. && mkdir -p artifacts && cp contracts/target/ink/multisig.contract artifacts/multisig.contract && cp contracts/target/ink/multisig.json artifacts/multisig.json && npx @727-ventures/typechain-polkadot --input artifacts --output typed_contracts
+build-docker-image:
+	docker build -t ink-rust-env .
+
+build-contract-release:   ## Build the contracts in release mode.
+	bash ./utils/build-core-contracts.sh --release
+
+build-contract-debug:   ## Build the contracts in debug mode.
+	bash ./utils/build-core-contracts.sh
+	
+type-generation:   ## Generate the types for the contracts.
+	bash ./utils/types-gen.sh
 
 node-download:    ## Download the substrate contracts node.
 	bash ./utils/download-node.sh
+
+compile-contracts:          ## Compile the contracts.
+	make build-docker-image
+	make build-contract-release
 	
-run:              ## Install dependencies, clean, build, and run tests.
+run-tests:              ## Install dependencies, download node and run tests.
 	yarn install
-	make clean
-	make build
 	make node-download
+	make test
+
+build-and-test:
+	make build-contract-release
+	make type-generation
 	make test
