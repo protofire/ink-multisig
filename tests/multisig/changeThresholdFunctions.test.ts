@@ -8,8 +8,6 @@ import {
   buildTransaction,
   proposeTransaction,
 } from "../utils/testHelpers";
-import Contract from "../../typed_contracts/multisig/contracts/multisig";
-import Constructors from "../../typed_contracts/multisig/constructors/multisig";
 
 let api;
 let keyring;
