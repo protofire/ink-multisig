@@ -26,7 +26,9 @@ export async function deployExternalContracts(
       contractsNames
     );
 
-    const deploymentPromises = contractsFiles.map(async (contractFile) => {
+    const deployedContracts = {};
+
+    for (const contractFile of contractsFiles) {
       const { fileName: contractName, content: contract } = contractFile;
       const { constructorName, constructorArgs, value } =
         externalContracts[contractName];
@@ -40,19 +42,12 @@ export async function deployExternalContracts(
         value
       );
 
-      return {
-        [contractName]: {
-          name: contractName,
-          address: contractAddress,
-          abi: contract,
-        },
+      deployedContracts[contractName] = {
+        name: contractName,
+        address: contractAddress,
+        abi: contract,
       };
-    });
-
-    const deployedContracts = Object.assign(
-      {},
-      ...(await Promise.all(deploymentPromises))
-    );
+    }
 
     return deployedContracts;
   } catch (error) {
