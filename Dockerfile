@@ -5,7 +5,7 @@ FROM rust:1.69
 RUN rustup toolchain install nightly-2023-02-07 \
     && rustup default nightly-2023-02-07 \
     && rustup component add rust-src \
-    && cargo install --force --version 3.0.1 cargo-contract
+    && cargo install --force --locked --version 3.0.1 cargo-contract
 
 # Set working directory
 WORKDIR /contracts
