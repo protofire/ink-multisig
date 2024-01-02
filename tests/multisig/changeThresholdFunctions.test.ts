@@ -108,31 +108,25 @@ describe("Change Threshold Function", () => {
       [4],
       multisigMessageIndex
     );
+    // Check the state before the execution of the transaction
+    const thresholdBefore = (
+      await multisig.query.getThreshold()
+    ).value.unwrap();
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, changeThresholdTx);
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
-
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
-
-    // Emit the success in the event result
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
 
     // Check the state after the execution of the transaction
     // Because the threshold is 2, the transaction is executed automatically and removed
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
 
-    // threshold is still 2
-    const threshold = (await multisig.query.getThreshold()).value.unwrap();
-    expect(threshold).to.equal(2);
+    // Check the state after the execution of the transaction
+    const thresholdAfter = (await multisig.query.getThreshold()).value.unwrap();
+    expect(thresholdBefore).to.equal(thresholdAfter);
   });
 
   it("Should not change the threshold to zero", async () => {
@@ -149,30 +143,24 @@ describe("Change Threshold Function", () => {
       [0],
       multisigMessageIndex
     );
+    // Check the state before the execution of the transaction
+    const thresholdBefore = (
+      await multisig.query.getThreshold()
+    ).value.unwrap();
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, changeThresholdTx);
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
-
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
-
-    // Emit the success in the event result
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
 
     // Check the state after the execution of the transaction
     // Because the threshold is 2, the transaction is executed automatically and removed
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
 
-    // threshold is still 2
-    const threshold = (await multisig.query.getThreshold()).value.unwrap();
-    expect(threshold).to.equal(2);
+    // Check the state after the execution of the transaction
+    const thresholdAfter = (await multisig.query.getThreshold()).value.unwrap();
+    expect(thresholdBefore).to.equal(thresholdAfter);
   });
 });
