@@ -1,27 +1,30 @@
 import { ApiPromise } from "@polkadot/api";
-import {
-  BlueprintPromise,
-} from '@polkadot/api-contract';
+import { BlueprintPromise, ContractPromise } from "@polkadot/api-contract";
 import { AbiMessage } from "@polkadot/api-contract/types";
 
 export class ContractInterface {
-  blueprint: BlueprintPromise;
+  contract: BlueprintPromise | ContractPromise;
 
-  constructor(api: ApiPromise, abi: any) {
-    this.blueprint = new BlueprintPromise(api, abi, abi.source.hash);
+  constructor(api: ApiPromise, abi: any, address?: string) {
+    if (address) {
+      this.contract = new ContractPromise(api, abi, address);
+    } else {
+      this.contract = new BlueprintPromise(api, abi, abi.source.hash);
+    }
   }
-  
-  // TODO: Check if the codeHash is returned correctly
-  getCodeHash(): string {
-    return this.blueprint.codeHash.toString();
+
+  getMessages(): AbiMessage[] {
+    return this.contract.abi.messages;
   }
 
   getMessageInfo(methodName: string): AbiMessage | null {
-    return this.blueprint.abi.messages.find((m) => m.method === methodName) || null;
+    return this.contract.abi.findMessage(methodName);
   }
 
   transformArgsToBytes(methodName: string, args: unknown[]): number[] {
-    const messageInfo = this.blueprint.abi.messages.find((m) => m.method === methodName);
+    const messageInfo = this.contract.abi.messages.find(
+      (m) => m.method === methodName
+    );
 
     if (!messageInfo) {
       throw new Error("Message not found");
@@ -36,7 +39,7 @@ export class ContractInterface {
       const arg = args[i];
       const argInfo = messageInfo.args[i];
 
-      const convertedArg = this.blueprint.api
+      const convertedArg = this.contract.api
         .createType(argInfo.type.type, arg)
         .toU8a();
       // Log the index and the convertedArg

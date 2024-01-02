@@ -214,12 +214,6 @@ describe("Add Owner Function", () => {
     // Bind the contract to the new address
     const multisig = new Contract(address, keypairs[0], api);
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
-
     const addOwnerTx = await buildTransaction(
       api,
       address,
@@ -228,17 +222,21 @@ describe("Add Owner Function", () => {
       multisigMessageIndex
     );
 
+    // Check the state before the execution of the transaction
+    const ownersBefore = (await multisig.query.getOwners()).value.unwrap();
+
     // Propose the transaction on chain
     await proposeTransaction(multisig, addOwnerTx);
 
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
 
-    // Emit the error in the event
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
-    expect(Object.keys(newTxExecutedEvent.result.failed)).to.include(
-      "envExecutionFailed"
-    );
+    // Check the state after the execution of the transaction
+    const ownersAfter = (await multisig.query.getOwners()).value.unwrap();
+
+    // Assert that the owner was not added
+    expect(ownersBefore).to.have.lengthOf(10);
+    expect(ownersAfter).to.have.lengthOf(10);
+    expect(ownersAfter).to.not.include(zetaKeyPair.address);
   });
 });
