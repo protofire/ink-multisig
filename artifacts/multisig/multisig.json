@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x666d9f46a96e595c8a26ddf51dd4eada8344b1f1872566d587883b604e606c97",
+    "hash": "0x43b2fc4d17b045a3e770ac138bf2022a0a6c22bc6f4dee15d2e2784dc7958b5a",
     "language": "ink! 4.2.0",
     "compiler": "rustc 1.69.0-nightly",
     "build_info": {
@@ -2032,8 +2032,8 @@
               {
                 "fields": [
                   {
-                    "type": 7,
-                    "typeName": "Vec<u8>"
+                    "type": 4,
+                    "typeName": "()"
                   }
                 ],
                 "index": 0,

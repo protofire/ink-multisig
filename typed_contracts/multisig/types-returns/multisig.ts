@@ -107,14 +107,14 @@ export type Transaction = {
 }
 
 export interface TxResult {
-	success ? : Array<number>,
+	success ? : null,
 	failed ? : MultisigError
 }
 
 export class TxResultBuilder {
-	static Success(value: Array<number>): TxResult {
+	static Success(): TxResult {
 		return {
-			success: value,
+			success: null,
 		};
 	}
 	static Failed(value: MultisigError): TxResult {

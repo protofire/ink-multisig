@@ -172,7 +172,7 @@ mod multisig {
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
     pub enum TxResult {
         /// Transaction executed successfully with the given result
-        Success(Vec<u8>),
+        Success(()),
         /// Transaction failed with the given error
         Failed(MultisigError),
     }
@@ -645,7 +645,7 @@ mod multisig {
                 .transferred_value(tx.transferred_value)
                 .call_flags(CallFlags::default().set_allow_reentry(tx.allow_reentry))
                 .exec_input(ExecutionInput::new(tx.selector.into()).push_arg(InputArgs(&tx.input)))
-                .returns::<Vec<u8>>()
+                .returns::<()>()
                 .try_invoke();
 
             // Instead of just returning a custom Error we could return the error from the call
