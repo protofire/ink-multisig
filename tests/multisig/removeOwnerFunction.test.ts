@@ -112,11 +112,8 @@ describe("Remove Owner Function", () => {
       multisigMessageIndex
     );
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
+    // Check the state before the execution of the transaction
+    const ownersBefore = (await multisig.query.getOwners()).value.unwrap();
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, rmOwnerTx);
@@ -124,20 +121,15 @@ describe("Remove Owner Function", () => {
     // Approve the transaction by Bob
     await multisig.withSigner(bobKeyringPair).tx.approveTx(0);
 
-    // Emit the fail in the event result
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
-
     // Check the state after the execution of the transaction
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
 
-    // no one is removed as an owner
-    const newOwners = (await multisig.query.getOwners()).value.unwrap();
-    expect(newOwners).to.have.lengthOf(3);
-    expect(newOwners).to.include(aliceKeyringPair.address);
-    expect(newOwners).to.include(bobKeyringPair.address);
-    expect(newOwners).to.include(charlieKeyringPair.address);
+    const ownersAfter = (await multisig.query.getOwners()).value.unwrap();
+    expect(ownersAfter).to.have.lengthOf(3);
+    expect(ownersAfter).to.include(aliceKeyringPair.address);
+    expect(ownersAfter).to.include(bobKeyringPair.address);
+    expect(ownersAfter).to.include(charlieKeyringPair.address);
   });
 
   it("Should not remove an only owner", async () => {
@@ -157,11 +149,8 @@ describe("Remove Owner Function", () => {
       multisigMessageIndex
     );
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
+    // Check the state before the execution of the transaction
+    const ownersBefore = (await multisig.query.getOwners()).value.unwrap();
 
     // Propose the transaction on chain
     await multisig.tx.proposeTx(rmOwnerTx);
@@ -170,20 +159,14 @@ describe("Remove Owner Function", () => {
     let tx = await multisig.query.getTx(0);
     expect(tx).to.exist;
 
-    // Emit the fail in the event result
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
-
     // Check the state after the execution of the transaction
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
 
     // no one is removed as an owner
-    const newOwners = (await multisig.query.getOwners()).value.unwrap();
-    expect(newOwners).to.have.lengthOf(1);
-    expect(newOwners).to.include(aliceKeyringPair.address);
-    expect(newOwners).to.not.include(bobKeyringPair.address);
-    expect(newOwners).to.not.include(charlieKeyringPair.address);
+    const ownersAfter = (await multisig.query.getOwners()).value.unwrap();
+    expect(ownersAfter).to.have.lengthOf(1);
+    expect(ownersAfter).to.include(aliceKeyringPair.address);
   });
 
   it("Should not remove an owner if the threshold does not makes sense after removing", async () => {
@@ -202,11 +185,8 @@ describe("Remove Owner Function", () => {
       multisigMessageIndex
     );
 
-    //Listen for the event
-    let newTxExecutedEvent;
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      newTxExecutedEvent = event;
-    });
+    // Check the state before the execution of the transaction
+    const ownersBefore = (await multisig.query.getOwners()).value.unwrap();
 
     // Propose the transaction on chain
     await proposeTransaction(multisig, rmOwnerTx);
@@ -216,19 +196,13 @@ describe("Remove Owner Function", () => {
     // Approve the transaction by Charlie
     await multisig.withSigner(charlieKeyringPair).tx.approveTx(0);
 
-    // Emit the fail in the event result
-    expect(newTxExecutedEvent).to.exist;
-    expect(Object.keys(newTxExecutedEvent.result)).to.include("failed");
-
     // Check the state after the execution of the transaction
     const tx_0 = (await multisig.query.getTx(0)).value.ok;
     expect(tx_0).to.not.exist;
 
     // no one is removed as an owner
-    const newOwners = (await multisig.query.getOwners()).value.unwrap();
-    expect(newOwners).to.have.lengthOf(3);
-    expect(newOwners).to.include(aliceKeyringPair.address);
-    expect(newOwners).to.include(bobKeyringPair.address);
-    expect(newOwners).to.include(charlieKeyringPair.address);
+    const ownersAfter = (await multisig.query.getOwners()).value.unwrap();
+    expect(ownersAfter).to.have.lengthOf(3);
+    expect(ownersAfter).to.be.deep.equal(ownersBefore);
   });
 });

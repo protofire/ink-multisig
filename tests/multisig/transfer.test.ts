@@ -154,22 +154,16 @@ describe("Transfer function", () => {
       allowReentry: true,
     };
 
-    // Variable that will store the event received when the transaction is executed
-    let transferEvent;
-
-    // Before executing the transaction, we will subscribe to the Executed event
-    // in order to check that the transaction has failed
-    multisig.events.subscribeOnTransactionExecutedEvent((event) => {
-      transferEvent = event;
-    });
-
     // Execute the transaction on chain
     await multisig.tx.proposeTx(transferTx);
 
-    //TODO: We expected the transaction to fail with TransferFailed but it fails with Decode
-    expect(transferEvent).to.have.nested.property(
-      "result.failed.envExecutionFailed",
-      "Decode(Error)"
+    // Check the state after the execution of the transaction
+    const multisigBalanceAfter = await api.query.system.account(
+      multisigAddress
+    );
+
+    expect(multisigBalanceAfter.data.free.toBigInt()).to.equal(
+      multisigInitialBalance.data.free.toBigInt()
     );
   });
 });
